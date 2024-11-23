@@ -135,12 +135,12 @@ contract Auctions is
         returns (
             address tokenContract,
             uint256 tokenId,
-            address latestBidder,
+            uint72  tokenAmount,
+            uint16  tokenERCStandard,
+            uint32  endTimestamp,
+            bool    settled,
             uint128 latestBid,
-            uint32 endTimestamp,
-            uint16 tokenERCStandard,
-            uint72 tokenAmount,
-            bool settled,
+            address latestBidder,
             address beneficiary
         )
     {
@@ -148,12 +148,12 @@ contract Auctions is
         return (
             auction.tokenContract,
             auction.tokenId,
-            auction.latestBidder,
-            auction.latestBid,
-            auction.endTimestamp,
-            auction.tokenERCStandard,
             auction.tokenAmount,
+            auction.tokenERCStandard,
+            auction.endTimestamp,
             auction.settled,
+            auction.latestBid,
+            auction.latestBidder,
             auction.beneficiary
         );
     }
