@@ -7,6 +7,18 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
+struct Auction {
+    address tokenContract;
+    uint256 tokenId;
+    uint72  tokenAmount;
+    uint16  tokenERCStandard;
+    uint32  endTimestamp;
+    bool    settled;
+    uint128 latestBid;
+    address latestBidder;
+    address payable beneficiary;
+}
+
 contract Auctions is
     ERC721Holder,
     ERC1155Holder,
@@ -20,18 +32,6 @@ contract Auctions is
 
     /// @notice The next auction ID
     uint64 public nextAuctionId;
-
-    struct Auction {
-        address tokenContract;
-        uint256 tokenId;
-        address latestBidder;
-        uint128 latestBid;
-        uint32 endTimestamp;
-        uint16 tokenERCStandard;
-        uint8 tokenAmount;
-        bool settled;
-        address payable beneficiary;
-    }
 
     /// @dev Each auction is identified by an ID
     mapping(uint256 => Auction) private _auctions;
@@ -84,14 +84,13 @@ contract Auctions is
         uint256 tokenId,
         bytes memory data
     ) public override returns (bytes4) {
-        // Decode auction parameters from data
         address payable beneficiary = _decodeAuctionParams(data);
+        address tokenContract = msg.sender;
 
         _initializeAuction(
-            msg.sender,  // token contract address
+            tokenContract,
             tokenId,
             721,
-            from,
             1,
             beneficiary
         );
@@ -115,15 +114,14 @@ contract Auctions is
             revert TooManyTokens();
         }
 
-        // Decode auction parameters from data
         address payable beneficiary = _decodeAuctionParams(data);
+        address tokenContract = msg.sender;
 
         _initializeAuction(
-            msg.sender,  // token contract address
+            tokenContract,  // token contract address
             id,
             1155,
-            from,
-            uint8(value),
+            uint72(value),
             beneficiary
         );
 
@@ -209,7 +207,7 @@ contract Auctions is
             uint128 latestBid,
             uint32 endTimestamp,
             uint16 tokenERCStandard,
-            uint8 tokenAmount,
+            uint72 tokenAmount,
             bool settled,
             address beneficiary
         )
@@ -348,19 +346,18 @@ contract Auctions is
         address tokenContract,
         uint256 tokenId,
         uint16 tokenERCStandard,
-        address tokenOwner,
-        uint8 tokenAmount,
+        uint72 tokenAmount,
         address payable beneficiary
     ) internal {
+        uint32 endTimestamp = uint32(block.timestamp + 24 hours);
         _auctions[nextAuctionId] = Auction(
             tokenContract,
             tokenId,
-            tokenOwner,
-            0, // no bid has been placed
-            uint32(block.timestamp + 24 hours),
-            tokenERCStandard,
             tokenAmount,
-            false,
+            tokenERCStandard,
+            endTimestamp,
+            false, // not settled yet
+            0, // no bid has been placed
             beneficiary
         );
 
@@ -369,7 +366,7 @@ contract Auctions is
             tokenContract,
             tokenId,
             beneficiary,
-            uint32(block.timestamp + 24 hours)
+            endTimestamp
         );
 
         nextAuctionId++;
