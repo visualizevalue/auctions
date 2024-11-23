@@ -10,8 +10,8 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 struct Auction {
     address tokenContract;
     uint256 tokenId;
-    uint72  tokenAmount;
-    uint16  tokenERCStandard;
+    uint80  tokenAmount;
+    uint8   tokenStandard;
     uint32  endTimestamp;
     bool    settled;
     uint128 latestBid;
@@ -41,11 +41,12 @@ contract Auctions is
 
     /// @dev Emitted when an NFT is sent to the contract.
     event AuctionInitialised(
-        uint64 indexed auctionId,
+        uint64  indexed auctionId,
         address indexed tokenContract,
         uint256 indexed tokenId,
+        uint16  tokenERCStandard,
+        uint32  endTimestamp
         address beneficiary,
-        uint32 endTimestamp
     );
 
     /// @dev Emitted when a new bid is entered.
@@ -54,7 +55,8 @@ contract Auctions is
     /// @dev Emitted when a new bid is entered within the BIDDING_GRACE_PERIOD.
     event AuctionExtended(uint64 indexed auctionId, uint256 indexed endTimestamp);
 
-    /// @dev Emitted when an auction is settled, the NFT is sent to the winner and the funds sent to the beneficiary.
+    /// @dev Emitted when an auction is settled, the NFT is sent
+    //       to the winner and the funds sent to the beneficiary.
     event AuctionSettled(
         uint64 indexed auctionId,
         address indexed winner,
@@ -90,7 +92,7 @@ contract Auctions is
         _initializeAuction(
             tokenContract,
             tokenId,
-            721,
+            1,
             1,
             beneficiary
         );
@@ -120,8 +122,8 @@ contract Auctions is
         _initializeAuction(
             tokenContract,  // token contract address
             id,
-            1155,
-            uint72(value),
+            2,
+            uint80(value),
             beneficiary
         );
 
@@ -135,7 +137,7 @@ contract Auctions is
         returns (
             address tokenContract,
             uint256 tokenId,
-            uint72  tokenAmount,
+            uint80  tokenAmount,
             uint16  tokenERCStandard,
             uint32  endTimestamp,
             bool    settled,
@@ -149,7 +151,7 @@ contract Auctions is
             auction.tokenContract,
             auction.tokenId,
             auction.tokenAmount,
-            auction.tokenERCStandard,
+            _getERCStandard(auction.tokenStandard),
             auction.endTimestamp,
             auction.settled,
             auction.latestBid,
@@ -213,14 +215,14 @@ contract Auctions is
         }
 
         // Transfer the NFT to the winner
-        if (auction.tokenERCStandard == 721) {
+        if (auction.tokenStandard == 1) {
             IERC721(auction.tokenContract).safeTransferFrom(
                 address(this),
                 winner,
                 auction.tokenId,
                 ""
             );
-        } else if (auction.tokenERCStandard == 1155) {
+        } else if (auction.tokenStandard == 2) {
             IERC1155(auction.tokenContract).safeTransferFrom(
                 address(this),
                 winner,
@@ -279,8 +281,8 @@ contract Auctions is
     function _initializeAuction(
         address tokenContract,
         uint256 tokenId,
-        uint16 tokenERCStandard,
-        uint72 tokenAmount,
+        uint8   tokenStandard,
+        uint80  tokenAmount,
         address payable beneficiary
     ) internal {
         uint32 endTimestamp = uint32(block.timestamp + 24 hours);
@@ -288,7 +290,7 @@ contract Auctions is
             tokenContract,
             tokenId,
             tokenAmount,
-            tokenERCStandard,
+            tokenStandard,
             endTimestamp,
             false, // not settled yet
             0, // no bid has been placed
@@ -300,6 +302,7 @@ contract Auctions is
             nextAuctionId,
             tokenContract,
             tokenId,
+            _getERCStandard(tokenStandard),
             beneficiary,
             endTimestamp
         );
@@ -315,6 +318,14 @@ contract Auctions is
             auction.endTimestamp = uint32(_now + BIDDING_GRACE_PERIOD);
             emit AuctionExtended(auctionId, auction.endTimestamp);
         }
+    }
+
+    /// @dev Parses the token standard to their ERC identifier.
+    function _getERCStandard(uint8 standard) internal pure returns (uint16) {
+        if (standard == 1) return 721;
+        if (standard == 2) return 1155;
+
+        revert UnsupportedTokenStandard();
     }
 
     /// @dev Whether an auction has an existing bid
