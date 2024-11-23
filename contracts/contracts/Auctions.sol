@@ -85,16 +85,20 @@ contract Auctions is
         address from,
         uint256 tokenId,
         bytes memory data
-    ) public override returns (bytes4) {
-        address payable beneficiary = _getBeneficiary(data, from);
+    ) public override returns (bytes4) nonReentrant {
         address tokenContract = msg.sender;
+
+        // Verify the token is actually owned by this contract
+        if (IERC721(tokenContract).ownerOf(tokenId) != address(this)) {
+            revert TokenNotTransferred();
+        }
 
         _initializeAuction(
             tokenContract,
             tokenId,
             1,
             1,
-            beneficiary
+            _getBeneficiary(data, from)
         );
 
         return this.onERC721Received.selector;
@@ -111,12 +115,13 @@ contract Auctions is
         uint256 id,
         uint256 value,
         bytes memory data
-    ) public override returns (bytes4) {
+    ) public override returns (bytes4) nonReentrant {
         if (value >= 256) {
             revert TooManyTokens();
         }
 
-        address payable beneficiary = _getBeneficiary(data, from);
+        // FIXME: Vulnerability via calling with same token id as existing auction
+
         address tokenContract = msg.sender;
 
         _initializeAuction(
@@ -124,7 +129,7 @@ contract Auctions is
             id,
             2,
             uint80(value),
-            beneficiary
+            _getBeneficiary(data, from)
         );
 
         return this.onERC1155Received.selector;
