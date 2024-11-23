@@ -290,6 +290,7 @@ contract Auctions is
             endTimestamp,
             false, // not settled yet
             0, // no bid has been placed
+            address(0),
             beneficiary
         );
 
