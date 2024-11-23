@@ -84,7 +84,7 @@ contract Auctions is
         uint256 tokenId,
         bytes memory data
     ) public override returns (bytes4) {
-        address payable beneficiary = _decodeAuctionParams(data);
+        address payable beneficiary = _getBeneficiary(data, from);
         address tokenContract = msg.sender;
 
         _initializeAuction(
@@ -114,7 +114,7 @@ contract Auctions is
             revert TooManyTokens();
         }
 
-        address payable beneficiary = _decodeAuctionParams(data);
+        address payable beneficiary = _getBeneficiary(data, from);
         address tokenContract = msg.sender;
 
         _initializeAuction(
@@ -259,13 +259,15 @@ contract Auctions is
 
     /// @dev Decode auction parameters from token transfer data
     /// @param data Encoded auction parameters: address beneficiary (20 bytes)
-    function _decodeAuctionParams(bytes memory data) internal view returns (address payable beneficiary) {
+    function _getBeneficiary(bytes memory data, address defaultBeneficiary) internal pure returns (address payable) {
         // First 20 bytes are the beneficiary address
-        beneficiary = payable(abi.decode(data, (address)));
+        address beneficiary = abi.decode(data, (address));
 
         if (beneficiary == address(0)) {
-            beneficiary = payable(msg.sender);
+          beneficiary = defaultBeneficiary;
         }
+
+        return payable(beneficiary);
     }
 
     /// @dev Calculate the minimum bid based on current network conditions (based on VV Mint prices)
