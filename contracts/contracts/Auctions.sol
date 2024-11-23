@@ -268,15 +268,9 @@ contract Auctions is
     /// @param auctionId The Auction ID to claim.
     function settle(uint64 auctionId) external {
         Auction storage auction = _auctions[auctionId];
-        if (auction.settled) {
-            revert AuctionAlreadySettled();
-        }
-        if (auction.endTimestamp == 0) {
-            revert AuctionDoesNotExist();
-        }
-        if (block.timestamp <= auction.endTimestamp) {
-            revert AuctionNotComplete();
-        }
+        if (auction.settled) revert AuctionAlreadySettled();
+        if (auction.endTimestamp == 0) revert AuctionDoesNotExist();
+        if (block.timestamp <= auction.endTimestamp) revert AuctionNotComplete();
 
         address winner = _hasBid(auction) ? auction.latestBidder : auction.latestBidder;
 
@@ -284,7 +278,7 @@ contract Auctions is
         if (_hasBid(auction)) {
             (bool success,) = auction.beneficiary.call{value: auction.latestBid}("");
             if (!success) {
-                revert FailedToForwardFunds();
+                _balances[auction.beneficiary] += auction.latestBid;
             }
         }
 
