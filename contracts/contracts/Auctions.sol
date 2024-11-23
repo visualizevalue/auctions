@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -12,8 +12,8 @@ contract Auctions is
     ERC1155Holder,
     ReentrancyGuard
 {
-    /// @notice Minimum auction duration after a bid in seconds (15 minutes).
-    uint32 public constant BIDDING_GRACE_PERIOD = 15 minutes;
+    /// @notice Minimum auction duration after a bid in seconds (5 minutes).
+    uint32 public constant BIDDING_GRACE_PERIOD = 5 minutes;
 
     /// @notice Each bid has to increase by at least 10%
     uint32 public constant BID_PERCENTAGE_INCREASE = 10;
@@ -75,15 +75,14 @@ contract Auctions is
     error InvalidAuctionParameters();
 
     /// @dev Hook for `safeTransferFrom` of ERC721 tokens to this contract
-    /// @param operator The address which initiated the transfer
     /// @param from The address which previously owned the token
     /// @param tokenId The ID of the token being transferred
     /// @param data The auction parameters encoded as: address beneficiary (20 bytes)
     function onERC721Received(
-        address operator,
+        address, // The (approved) address which initiated the transfer
         address from,
         uint256 tokenId,
-        bytes calldata data
+        bytes memory data
     ) public override returns (bytes4) {
         // Decode auction parameters from data
         address payable beneficiary = _decodeAuctionParams(data);
@@ -101,17 +100,16 @@ contract Auctions is
     }
 
     /// @dev Hook for `safeTransferFrom` of ERC1155 tokens to this contract
-    /// @param operator The address which initiated the transfer
     /// @param from The address which previously owned the token
     /// @param id The ID of the token being transferred
     /// @param value The amount of tokens being transferred
     /// @param data The auction parameters encoded as: address beneficiary (20 bytes)
     function onERC1155Received(
-        address operator,
+        address, // The (approved) address which initiated the transfer
         address from,
         uint256 id,
         uint256 value,
-        bytes calldata data
+        bytes memory data
     ) public override returns (bytes4) {
         if (value >= 256) {
             revert TooManyTokens();
@@ -337,12 +335,12 @@ contract Auctions is
 
     /// @dev Decode auction parameters from token transfer data
     /// @param data Encoded auction parameters: address beneficiary (20 bytes)
-    function _decodeAuctionParams(bytes calldata data) internal pure returns (address payable beneficiary) {
+    function _decodeAuctionParams(bytes memory data) internal view returns (address payable beneficiary) {
         // First 20 bytes are the beneficiary address
         beneficiary = payable(abi.decode(data, (address)));
 
         if (beneficiary == address(0)) {
-            beneficiary = msg.sender;
+            beneficiary = payable(msg.sender);
         }
     }
 
