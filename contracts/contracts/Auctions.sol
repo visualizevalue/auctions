@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 struct Auction {
     address tokenContract;
     uint256 tokenId;
     uint80  tokenAmount;
     uint8   tokenStandard;
-    uint32  endTimestamp;
+    uint48  endTimestamp;
     bool    settled;
-    uint128 latestBid;
+    uint112 latestBid;
     address latestBidder;
     address payable beneficiary;
 }
@@ -24,14 +24,20 @@ contract Auctions is
     ERC1155Holder,
     ReentrancyGuard
 {
+    /// @notice The auctions are all one day (+ variable bid grace period increments).
+    uint48 public constant AUCTION_DURATION = 24 hours;
+
     /// @notice Minimum auction duration after a bid in seconds (5 minutes).
-    uint32 public constant BIDDING_GRACE_PERIOD = 5 minutes;
+    uint48 public constant BIDDING_GRACE_PERIOD = 5 minutes;
 
     /// @notice Each bid has to increase by at least 10%
-    uint32 public constant BID_PERCENTAGE_INCREASE = 10;
+    uint256 public constant BID_PERCENTAGE_INCREASE = 10;
+
+    /// @notice Mininum bid increases should be capped at 1 Ether.
+    uint256 public constant MAX_BID_INCREASE = 1 ether;
 
     /// @notice The next auction ID
-    uint64 public nextAuctionId;
+    uint64 public auctionId;
 
     /// @dev Each auction is identified by an ID
     mapping(uint256 => Auction) private _auctions;
@@ -45,8 +51,8 @@ contract Auctions is
         address indexed tokenContract,
         uint256 indexed tokenId,
         uint16  tokenERCStandard,
-        uint32  endTimestamp
-        address beneficiary,
+        uint48  endTimestamp,
+        address beneficiary
     );
 
     /// @dev Emitted when a new bid is entered.
@@ -58,7 +64,7 @@ contract Auctions is
     /// @dev Emitted when an auction is settled, the NFT is sent
     //       to the winner and the funds sent to the beneficiary.
     event AuctionSettled(
-        uint64 indexed auctionId,
+        uint64  indexed auctionId,
         address indexed winner,
         address indexed beneficiary,
         uint256 amount
@@ -85,13 +91,8 @@ contract Auctions is
         address from,
         uint256 tokenId,
         bytes memory data
-    ) public override returns (bytes4) nonReentrant {
+    ) public override returns (bytes4) {
         address tokenContract = msg.sender;
-
-        // Verify the token is actually owned by this contract
-        if (IERC721(tokenContract).ownerOf(tokenId) != address(this)) {
-            revert TokenNotTransferred();
-        }
 
         _initializeAuction(
             tokenContract,
@@ -115,12 +116,10 @@ contract Auctions is
         uint256 id,
         uint256 value,
         bytes memory data
-    ) public override returns (bytes4) nonReentrant {
+    ) public override returns (bytes4) {
         if (value >= 256) {
             revert TooManyTokens();
         }
-
-        // FIXME: Vulnerability via calling with same token id as existing auction
 
         address tokenContract = msg.sender;
 
@@ -136,7 +135,7 @@ contract Auctions is
     }
 
     /// @dev Get an Auction by its ID
-    function getAuction(uint64 auctionId)
+    function getAuction(uint64 id)
         public
         view
         returns (
@@ -144,14 +143,14 @@ contract Auctions is
             uint256 tokenId,
             uint80  tokenAmount,
             uint16  tokenERCStandard,
-            uint32  endTimestamp,
+            uint48  endTimestamp,
             bool    settled,
-            uint128 latestBid,
+            uint112 latestBid,
             address latestBidder,
             address beneficiary
         )
     {
-        Auction memory auction = _auctions[auctionId];
+        Auction memory auction = _auctions[id];
         return (
             auction.tokenContract,
             auction.tokenId,
@@ -166,14 +165,14 @@ contract Auctions is
     }
 
     /// @dev The minimum value of the next bid for an auction.
-    function currentBidPrice(uint64 auctionId) external view returns (uint256) {
-        return _currentBidPrice(_auctions[auctionId]);
+    function currentBidPrice(uint64 id) external view returns (uint256) {
+        return _currentBidPrice(_auctions[id]);
     }
 
     /// @dev Enter a new bid
-    /// @param auctionId The Auction ID to bid on
-    function bid(uint64 auctionId) external payable nonReentrant {
-        Auction storage auction = _auctions[auctionId];
+    /// @param id The Auction ID to bid on
+    function bid(uint64 id) external payable nonReentrant {
+        Auction storage auction = _auctions[id];
         uint256 bidValue = msg.value;
         address bidder = msg.sender;
 
@@ -192,19 +191,19 @@ contract Auctions is
             }
         }
 
-        _maybeExtendTime(auctionId, auction);
+        _maybeExtendTime(id, auction);
 
         // Store the bid
-        auction.latestBid = uint128(bidValue);
+        auction.latestBid = uint112(bidValue);
         auction.latestBidder = bidder;
 
-        emit Bid(auctionId, bidValue, bidder);
+        emit Bid(id, bidValue, bidder);
     }
 
     /// @dev Settles an auction
-    /// @param auctionId The Auction ID to claim.
-    function settle(uint64 auctionId) external {
-        Auction storage auction = _auctions[auctionId];
+    /// @param id The Auction ID to claim.
+    function settle(uint64 id) external {
+        Auction storage auction = _auctions[id];
         if (auction.settled) revert AuctionAlreadySettled();
         if (auction.endTimestamp == 0) revert AuctionDoesNotExist();
         if (block.timestamp <= auction.endTimestamp) revert AuctionNotComplete();
@@ -241,7 +240,7 @@ contract Auctions is
 
         // End the auction
         auction.settled = true;
-        emit AuctionSettled(auctionId, winner, auction.beneficiary, auction.latestBid);
+        emit AuctionSettled(id, winner, auction.beneficiary, auction.latestBid);
     }
 
     /// @dev Get the balance for an address.
@@ -277,11 +276,6 @@ contract Auctions is
         return payable(beneficiary);
     }
 
-    /// @dev Calculate the minimum bid based on current network conditions (based on VV Mint prices)
-    function _getMinimumBid() internal view returns (uint256) {
-        return block.basefee * 60_000;
-    }
-
     /// @dev Initializes an auction
     function _initializeAuction(
         address tokenContract,
@@ -290,38 +284,36 @@ contract Auctions is
         uint80  tokenAmount,
         address payable beneficiary
     ) internal {
-        uint32 endTimestamp = uint32(block.timestamp + 24 hours);
-        _auctions[nextAuctionId] = Auction(
-            tokenContract,
-            tokenId,
-            tokenAmount,
-            tokenStandard,
-            endTimestamp,
-            false, // not settled yet
-            0, // no bid has been placed
-            address(0),
-            beneficiary
-        );
+        auctionId++;
+
+        uint48 endTimestamp = uint48(block.timestamp + AUCTION_DURATION);
+
+        Auction storage auction = _auctions[auctionId];
+
+        auction.tokenContract = tokenContract;
+        auction.tokenId =       tokenId;
+        auction.tokenAmount =   tokenAmount;
+        auction.tokenStandard = tokenStandard;
+        auction.endTimestamp =  endTimestamp;
+        auction.beneficiary =   beneficiary;
 
         emit AuctionInitialised(
-            nextAuctionId,
+            auctionId,
             tokenContract,
             tokenId,
             _getERCStandard(tokenStandard),
-            beneficiary,
-            endTimestamp
+            endTimestamp,
+            beneficiary
         );
-
-        nextAuctionId++;
     }
 
     /// @dev Extends the end time of an auction if we are within the grace period.
-    function _maybeExtendTime(uint64 auctionId, Auction storage auction) internal {
+    function _maybeExtendTime(uint64 id, Auction storage auction) internal {
         uint64 gracePeriodStart = auction.endTimestamp - BIDDING_GRACE_PERIOD;
         uint64 _now = uint64(block.timestamp);
         if (_now > gracePeriodStart) {
-            auction.endTimestamp = uint32(_now + BIDDING_GRACE_PERIOD);
-            emit AuctionExtended(auctionId, auction.endTimestamp);
+            auction.endTimestamp = uint48(_now + BIDDING_GRACE_PERIOD);
+            emit AuctionExtended(id, auction.endTimestamp);
         }
     }
 
@@ -333,22 +325,28 @@ contract Auctions is
         revert UnsupportedTokenStandard();
     }
 
+    /// @dev Calculates the minimum price for the next bid
+    function _currentBidPrice(Auction memory auction) internal view returns (uint256) {
+        if (!_hasBid(auction)) return _getMinimumBid();
+
+        uint256 latestBid = uint256(auction.latestBid);
+        uint256 percentageIncrease = latestBid * BID_PERCENTAGE_INCREASE / 100;
+
+        uint256 increase = percentageIncrease < MAX_BID_INCREASE
+            ? percentageIncrease
+            : MAX_BID_INCREASE;
+
+        return latestBid + increase;
+    }
+
     /// @dev Whether an auction has an existing bid
     function _hasBid(Auction memory auction) internal pure returns (bool) {
         return auction.latestBid > 0;
     }
 
-    /// @dev Calculates the minimum price for the next bid
-    function _currentBidPrice(Auction memory auction) internal view returns (uint256) {
-        if (!_hasBid(auction)) {
-            return _getMinimumBid();
-        }
-
-        uint256 percentageIncreasePrice = uint256(auction.latestBid) * (100 + BID_PERCENTAGE_INCREASE) / 100;
-        uint256 minimumBid = _getMinimumBid();
-
-        return percentageIncreasePrice < minimumBid ?
-            minimumBid :
-            percentageIncreasePrice;
+    /// @dev Calculate the minimum bid based on current network conditions (based on VV Mint prices)
+    function _getMinimumBid() internal view returns (uint256) {
+        return block.basefee * 60_000;
     }
 }
+
