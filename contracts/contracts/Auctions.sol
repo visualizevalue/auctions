@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+import "hardhat/console.sol";
+
 struct Auction {
     address tokenContract;
     uint256 tokenId;
@@ -25,19 +27,19 @@ contract Auctions is
     ReentrancyGuard
 {
     /// @notice The auctions are all one day (+ variable bid grace period increments).
-    uint48 public constant AUCTION_DURATION = 24 hours;
+    uint48 public immutable AUCTION_DURATION = 24 hours;
 
     /// @notice Minimum auction duration after a bid in seconds (5 minutes).
-    uint48 public constant BIDDING_GRACE_PERIOD = 5 minutes;
+    uint48 public immutable BIDDING_GRACE_PERIOD = 5 minutes;
 
     /// @notice Each bid has to increase by at least 10%
-    uint256 public constant BID_PERCENTAGE_INCREASE = 10;
+    uint256 public immutable BID_PERCENTAGE_INCREASE = 10;
 
     /// @notice Mininum bid increases should be capped at 1 Ether.
-    uint256 public constant MAX_BID_INCREASE = 1 ether;
+    uint256 public immutable MAX_BID_INCREASE = 1 ether;
 
     /// @notice The next auction ID
-    uint64 public auctionId;
+    uint256 public auctionId;
 
     /// @dev Each auction is identified by an ID
     mapping(uint256 => Auction) private _auctions;
@@ -47,7 +49,7 @@ contract Auctions is
 
     /// @dev Emitted when an NFT is sent to the contract.
     event AuctionInitialised(
-        uint64  indexed auctionId,
+        uint256 indexed auctionId,
         address indexed tokenContract,
         uint256 indexed tokenId,
         uint16  tokenERCStandard,
@@ -56,15 +58,15 @@ contract Auctions is
     );
 
     /// @dev Emitted when a new bid is entered.
-    event Bid(uint64 indexed auctionId, uint256 indexed bid, address indexed from);
+    event Bid(uint256 indexed auctionId, uint256 indexed bid, address indexed from);
 
     /// @dev Emitted when a new bid is entered within the BIDDING_GRACE_PERIOD.
-    event AuctionExtended(uint64 indexed auctionId, uint256 indexed endTimestamp);
+    event AuctionExtended(uint256 indexed auctionId, uint256 indexed endTimestamp);
 
     /// @dev Emitted when an auction is settled, the NFT is sent
     //       to the winner and the funds sent to the beneficiary.
     event AuctionSettled(
-        uint64  indexed auctionId,
+        uint256 indexed auctionId,
         address indexed winner,
         address indexed beneficiary,
         uint256 amount
@@ -117,14 +119,12 @@ contract Auctions is
         uint256 value,
         bytes memory data
     ) public override returns (bytes4) {
-        if (value >= 256) {
-            revert TooManyTokens();
-        }
+        if (value >= type(uint80).max) revert TooManyTokens();
 
         address tokenContract = msg.sender;
 
         _initializeAuction(
-            tokenContract,  // token contract address
+            tokenContract,
             id,
             2,
             uint80(value),
@@ -135,7 +135,7 @@ contract Auctions is
     }
 
     /// @dev Get an Auction by its ID
-    function getAuction(uint64 id)
+    function getAuction(uint256 id)
         public
         view
         returns (
@@ -165,50 +165,50 @@ contract Auctions is
     }
 
     /// @dev The minimum value of the next bid for an auction.
-    function currentBidPrice(uint64 id) external view returns (uint256) {
+    function currentBidPrice(uint256 id) external view returns (uint256) {
         return _currentBidPrice(_auctions[id]);
     }
 
     /// @dev Enter a new bid
     /// @param id The Auction ID to bid on
-    function bid(uint64 id) external payable nonReentrant {
+    function bid(uint256 id) external payable {
         Auction storage auction = _auctions[id];
-        uint256 bidValue = msg.value;
-        address bidder = msg.sender;
 
-        if (bidValue < _currentBidPrice(auction)) {
-            revert MinimumBidNotMet();
-        }
-        if (block.timestamp > auction.endTimestamp) {
-            revert AuctionNotActive();
-        }
+        address previousBidder = auction.latestBidder;
+        uint256 previousBid    = auction.latestBid;
+        uint256 bidValue       = msg.value;
+        address bidder         = msg.sender;
 
-        // Pay back previous bidder
-        if (_hasBid(auction)) {
-            (bool success,) = payable(auction.latestBidder).call{value: auction.latestBid}("");
-            if (!success) {
-                _balances[auction.latestBidder] += auction.latestBid;
-            }
-        }
+        if (bidValue < _currentBidPrice(auction)) revert MinimumBidNotMet();
+        if (block.timestamp > auction.endTimestamp) revert AuctionNotActive();
 
         _maybeExtendTime(id, auction);
 
         // Store the bid
-        auction.latestBid = uint112(bidValue);
+        auction.latestBid    = uint112(bidValue);
         auction.latestBidder = bidder;
+
+        // Pay back previous bidder
+        if (_hasBid(auction)) {
+            (bool success,) = payable(previousBidder).call{value: previousBid}("");
+            if (!success) {
+                _balances[previousBidder] += previousBid;
+            }
+        }
 
         emit Bid(id, bidValue, bidder);
     }
 
     /// @dev Settles an auction
     /// @param id The Auction ID to claim.
-    function settle(uint64 id) external {
+    function settle(uint256 id) external {
         Auction storage auction = _auctions[id];
         if (auction.settled) revert AuctionAlreadySettled();
         if (auction.endTimestamp == 0) revert AuctionDoesNotExist();
         if (block.timestamp <= auction.endTimestamp) revert AuctionNotComplete();
 
         address winner = _hasBid(auction) ? auction.latestBidder : auction.beneficiary;
+        auction.settled = true;
 
         // Send the funds to the beneficiary if there was a bid
         if (_hasBid(auction)) {
@@ -234,12 +234,8 @@ contract Auctions is
                 auction.tokenAmount,
                 ""
             );
-        } else {
-            revert UnsupportedTokenStandard();
         }
 
-        // End the auction
-        auction.settled = true;
         emit AuctionSettled(id, winner, auction.beneficiary, auction.latestBid);
     }
 
@@ -266,14 +262,15 @@ contract Auctions is
     /// @dev Decode auction parameters from token transfer data
     /// @param data Encoded auction parameters: address beneficiary (20 bytes)
     function _getBeneficiary(bytes memory data, address defaultBeneficiary) internal pure returns (address payable) {
-        // First 20 bytes are the beneficiary address
-        address beneficiary = abi.decode(data, (address));
+        if (data.length == 32) {
+            address beneficiary = abi.decode(data, (address));
 
-        if (beneficiary == address(0)) {
-          beneficiary = defaultBeneficiary;
+            if (beneficiary != address(0)) {
+                return payable(beneficiary);
+            }
         }
 
-        return payable(beneficiary);
+        return payable(defaultBeneficiary);
     }
 
     /// @dev Initializes an auction
@@ -308,11 +305,11 @@ contract Auctions is
     }
 
     /// @dev Extends the end time of an auction if we are within the grace period.
-    function _maybeExtendTime(uint64 id, Auction storage auction) internal {
-        uint64 gracePeriodStart = auction.endTimestamp - BIDDING_GRACE_PERIOD;
-        uint64 _now = uint64(block.timestamp);
+    function _maybeExtendTime(uint256 id, Auction storage auction) internal {
+        uint48 gracePeriodStart = auction.endTimestamp - BIDDING_GRACE_PERIOD;
+        uint48 _now = uint48(block.timestamp);
         if (_now > gracePeriodStart) {
-            auction.endTimestamp = uint48(_now + BIDDING_GRACE_PERIOD);
+            auction.endTimestamp = _now + BIDDING_GRACE_PERIOD;
             emit AuctionExtended(id, auction.endTimestamp);
         }
     }
