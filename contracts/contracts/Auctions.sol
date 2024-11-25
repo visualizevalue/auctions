@@ -208,7 +208,7 @@ contract Auctions is
         if (auction.endTimestamp == 0) revert AuctionDoesNotExist();
         if (block.timestamp <= auction.endTimestamp) revert AuctionNotComplete();
 
-        address winner = _hasBid(auction) ? auction.latestBidder : auction.latestBidder;
+        address winner = _hasBid(auction) ? auction.latestBidder : auction.beneficiary;
 
         // Send the funds to the beneficiary if there was a bid
         if (_hasBid(auction)) {
