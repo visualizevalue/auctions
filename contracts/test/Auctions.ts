@@ -213,7 +213,7 @@ describe('Auctions', function () {
     })
   })
 
-  describe.skip('Settlement', function () {
+  describe('Settlement', function () {
     it('settles auction with winner', async function () {
       const { auctions, mockERC721, owner, bidder1 } = await loadFixture(baseFixture)
 
@@ -224,14 +224,14 @@ describe('Auctions', function () {
         '0x'
       ])
 
-      const minBid = await auctions.read.currentBidPrice([1n])
-      await auctions.write.bid([1n], { account: bidder1.account, value: minBid })
+      await auctions.write.bid([1n], { account: bidder1.account, value: parseEther('1') })
 
       // Fast forward past end time
       await time.increase(24 * 60 * 60 + 1)
 
       // Settle auction
-      await auctions.write.settle([1n])
+      await expect(auctions.write.settle([1n]))
+        .to.changeEtherBalance(owner, parseEther('1'))
 
       // Check NFT transferred to winner
       expect(await mockERC721.read.ownerOf([1n])).to.equal(getAddress(bidder1.account.address))
@@ -291,9 +291,9 @@ describe('Auctions', function () {
     })
   })
 
-  describe.skip('Balance Management', function () {
+  describe('Balance Management', function () {
     it('allows withdrawal of failed refunds', async function () {
-      const { auctions, mockERC721, owner, bidder1 } = await loadFixture(baseFixture)
+      const { auctions, mockERC721, mockBidDOS, owner, bidder1, publicClient } = await loadFixture(baseFixture)
 
       // Create auction and place bid
       await mockERC721.write.safeTransferFrom([
@@ -303,17 +303,20 @@ describe('Auctions', function () {
         '0x'
       ])
 
-      const minBid = await auctions.read.currentBidPrice([1n])
-      await auctions.write.bid([1n], { account: bidder1.account, value: minBid })
+      await mockBidDOS.write.bid([auctions.address, 1n], { value: parseEther('1') })
 
-      // Check balance can be withdrawn
-      const balance = await auctions.read.getBalance([bidder1.account.address])
-      if (balance > 0n) {
-        const initialBalance = await hre.viem.getBalance(bidder1.account.address)
-        await auctions.write.withdraw({ account: bidder1.account })
-        const finalBalance = await hre.viem.getBalance(bidder1.account.address)
-        expect(finalBalance).to.be.greaterThan(initialBalance)
-      }
+      let balance = await auctions.read.balances([mockBidDOS.address])
+      expect(balance).to.equal(0n)
+
+      await auctions.write.bid([1n], { account: bidder1.account, value: parseEther('2') })
+
+      balance = await auctions.read.balances([mockBidDOS.address])
+      expect(balance).to.equal(parseEther('1'))
+
+      await expect(mockBidDOS.write.withdraw([auctions.address]))
+        .to.changeEtherBalance(mockBidDOS, parseEther('1'))
+
+      expect(await publicClient.getBalance(auctions)).to.equal(parseEther('2'))
     })
 
     it('prevents withdrawal with zero balance', async function () {

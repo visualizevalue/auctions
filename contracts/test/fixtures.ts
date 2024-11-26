@@ -9,6 +9,7 @@ export async function baseFixture() {
   // Deploy mock ERC721 and ERC1155 contracts
   const mockERC721 = await hre.viem.deployContract('MockERC721')
   const mockERC1155 = await hre.viem.deployContract('MockERC1155')
+  const mockBidDOS = await hre.viem.deployContract('MockBidDOS')
 
   // Deploy Auctions contract
   const { auctions } = await hre.ignition.deploy(AuctionsModule)
@@ -52,6 +53,7 @@ export async function baseFixture() {
     auctions,
     mockERC721,
     mockERC1155,
+    mockBidDOS,
     owner,
     bidder1,
     bidder2,

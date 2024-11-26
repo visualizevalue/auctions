@@ -45,7 +45,7 @@ contract Auctions is
     mapping(uint256 => Auction) public auctions;
 
     /// @dev When the automatic refunds of previous bids fail, they are stored in here
-    mapping(address => uint256) private _balances;
+    mapping(address => uint256) public balances;
 
     /// @dev Emitted when an NFT is sent to the contract.
     event AuctionInitialised(
@@ -162,7 +162,7 @@ contract Auctions is
         if (_hasBid(auction)) {
             (bool success,) = payable(previousBidder).call{value: previousBid}("");
             if (!success) {
-                _balances[previousBidder] += previousBid;
+                balances[previousBidder] += previousBid;
             }
         }
 
@@ -184,7 +184,7 @@ contract Auctions is
         if (_hasBid(auction)) {
             (bool success,) = auction.beneficiary.call{value: auction.latestBid}("");
             if (!success) {
-                _balances[auction.beneficiary] += auction.latestBid;
+                balances[auction.beneficiary] += auction.latestBid;
             }
         }
 
@@ -209,23 +209,18 @@ contract Auctions is
         emit AuctionSettled(id, winner, auction.beneficiary, auction.latestBid);
     }
 
-    /// @dev Get the balance for an address.
-    function getBalance(address _address) external view returns (uint256) {
-        return _balances[_address];
-    }
-
     /// @dev Withdraw user balance in case automatic refund in bid failed.
     function withdraw() external {
-        uint256 amount = _balances[msg.sender];
+        uint256 amount = balances[msg.sender];
         if (amount == 0) {
             revert NoBalanceToWithdraw();
         }
 
         // Set balance to zero because it could be called again in receive before call returns
-        _balances[msg.sender] = 0;
+        balances[msg.sender] = 0;
         (bool success,) = payable(msg.sender).call{value: amount}("");
         if (!success) {
-            _balances[msg.sender] = amount;
+            balances[msg.sender] = amount;
         }
     }
 
