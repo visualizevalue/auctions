@@ -6,23 +6,20 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
-struct Auction {
-    address tokenContract;
-    uint256 tokenId;
-    uint80  tokenAmount;
-    uint16  tokenStandard;
-    uint40  endTimestamp;
-    bool    settled;
-    uint112 latestBid;
-    address latestBidder;
-    address payable beneficiary;
-}
+contract Auctions is ERC721Holder, ERC1155Holder {
+    /// @notice The data struct for a given auction.
+    struct Auction {
+        address tokenContract;
+        uint256 tokenId;
+        uint80  tokenAmount;
+        uint16  tokenStandard;
+        uint40  endTimestamp;
+        bool    settled;
+        uint112 latestBid;
+        address latestBidder;
+        address payable beneficiary;
+    }
 
-contract Auctions is
-    ERC721Holder,
-    ERC1155Holder,
-    ReentrancyGuard
-{
     /// @notice The auctions are all one day (+ variable bid grace period increments).
     uint40 public immutable AUCTION_DURATION = 24 hours;
 
@@ -69,17 +66,14 @@ contract Auctions is
         uint256 amount
     );
 
-    error MinimumBidNotMet();
     error AuctionNotActive();
     error AuctionAlreadySettled();
     error AuctionDoesNotExist();
     error AuctionNotComplete();
-    error FailedToForwardFunds();
+    error FailedWithdrawal();
+    error MinimumBidNotMet();
     error NoBalanceToWithdraw();
     error TooManyTokens();
-    error InvalidBeneficiary();
-    error UnsupportedTokenStandard();
-    error InvalidAuctionParameters();
 
     /// @dev Hook for `safeTransferFrom` of ERC721 tokens to this contract
     /// @param from The address which previously owned the token
@@ -216,9 +210,7 @@ contract Auctions is
         // Set balance to zero because it could be called again in receive before call returns
         balances[msg.sender] = 0;
         (bool success,) = payable(msg.sender).call{value: amount}("");
-        if (!success) {
-            balances[msg.sender] = amount;
-        }
+        if (!success) revert FailedWithdrawal();
     }
 
     /// @dev Decode auction parameters from token transfer data
