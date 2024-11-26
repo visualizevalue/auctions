@@ -1,6 +1,9 @@
 <template>
   <Loading v-if="status !== 'success'" />
   <AuctionDetail v-else :auction="auction">
+    <template #artifact-after>
+      <slot name="artifact-after" />
+    </template>
     <template #header-after>
       <slot name="header-after" />
     </template>

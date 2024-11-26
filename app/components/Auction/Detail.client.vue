@@ -5,6 +5,7 @@
         <Embed v-if="token.animationUrl" :src="token.animationUrl" />
         <Image v-else-if="token.image" :src="token.image" :alt="token.name" />
         <ImageVoid v-else />
+        <slot name="artifact-after" />
       </div>
 
       <!-- <Actions> -->
