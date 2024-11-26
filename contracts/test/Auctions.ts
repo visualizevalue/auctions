@@ -214,7 +214,7 @@ describe('Auctions', function () {
   })
 
   describe('Settlement', function () {
-    it('settles auction with winner', async function () {
+    it('settles ERC721 auction with winner', async function () {
       const { auctions, mockERC721, owner, bidder1 } = await loadFixture(baseFixture)
 
       await mockERC721.write.safeTransferFrom([
@@ -235,6 +235,30 @@ describe('Auctions', function () {
 
       // Check NFT transferred to winner
       expect(await mockERC721.read.ownerOf([1n])).to.equal(getAddress(bidder1.account.address))
+    })
+
+    it('settles ERC1155 auction with winner', async function () {
+      const { auctions, mockERC1155, owner, bidder1 } = await loadFixture(baseFixture)
+
+      await mockERC1155.write.safeTransferFrom([
+        owner.account.address,
+        auctions.address,
+        1n,
+        9n,
+        '0x'
+      ])
+
+      await auctions.write.bid([1n], { account: bidder1.account, value: parseEther('1') })
+
+      // Fast forward past end time
+      await time.increase(24 * 60 * 60 + 1)
+
+      // Settle auction
+      await expect(auctions.write.settle([1n]))
+        .to.changeEtherBalance(owner, parseEther('1'))
+
+      // Check NFT transferred to winner
+      expect(await mockERC1155.read.balanceOf([bidder1.account.address, 1n])).to.equal(9n)
     })
 
     it('returns NFT to beneficiary if no bids', async function () {
