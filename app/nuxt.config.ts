@@ -68,8 +68,8 @@ export default defineNuxtConfig({
     'vite:extendConfig': (config) => {
       config.optimizeDeps ??= {}
       config.optimizeDeps.include = config.optimizeDeps.include || []
-      config.optimizeDeps.include.push('@visualizevalue/mint-app-base > eventemitter3')
-      config.optimizeDeps.include.push('@visualizevalue/mint-app-base > buffer/')
+      config.optimizeDeps.include.push('@visualizevalue/auctions-app-base > eventemitter3')
+      config.optimizeDeps.include.push('@visualizevalue/auctions-app-base > buffer/')
     }
   },
 
