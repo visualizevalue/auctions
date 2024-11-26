@@ -6,7 +6,25 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
-/// @notice Freedom to transact.
+///̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶//
+//                                                                   //
+//    ┌───────────────┐                       ┌────────────────┐     //
+//    │               │                       │                │     //
+//    │               │      safeTransfer     │                │     //
+//    │      NFT      │  ──────────────────►  │    AUCTIONS    │     //
+//    │               │                       │                │     //
+//    │               │                       │                │     //
+//    └───────────────┘                       └────────────────┘     //
+//                                                                   //
+//  ───────────────────────────────────────────────────────────────  //
+//                                                                   //
+//                         24 Hour Auction                           //
+//                      5 Minute Grace Period                        //
+//                  min(+10%, 1 Ether) Bid Increase                  //
+//                                                                   //
+///̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶/̶//
+
+/// @notice You are free to transact.
 /// @author Visualize Value
 contract Auctions is ERC721Holder, ERC1155Holder {
     /// @notice The data struct for a given auction.
