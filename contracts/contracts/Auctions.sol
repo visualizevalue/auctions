@@ -138,28 +138,28 @@ contract Auctions is ERC721Holder, ERC1155Holder {
         Auction storage auction = auctions[id];
 
         address previousBidder = auction.latestBidder;
-        uint256 previousBid    = auction.latestBid;
+        uint256 previousValue  = auction.latestBid;
         address bidder         = msg.sender;
-        uint256 bid            = msg.value;
+        uint256 value          = msg.value;
 
-        if (bid < _currentBidPrice(auction)) revert MinimumBidNotMet();
+        if (value < _currentBidPrice(auction)) revert MinimumBidNotMet();
         if (block.timestamp > auction.endTimestamp) revert AuctionNotActive();
 
         _maybeExtendTime(id, auction);
 
         // Store the bid
-        auction.latestBid    = uint112(bid);
+        auction.latestBid    = uint112(value);
         auction.latestBidder = bidder;
 
         // Pay back previous bidder
         if (_hasBid(auction)) {
-            (bool success,) = payable(previousBidder).call{value: previousBid}("");
+            (bool success,) = payable(previousBidder).call{value: previousValue}("");
             if (!success) {
-                balances[previousBidder] += previousBid;
+                balances[previousBidder] += previousValue;
             }
         }
 
-        emit Bid(id, bid, bidder);
+        emit Bid(id, value, bidder);
     }
 
     /// @dev Settles an auction
