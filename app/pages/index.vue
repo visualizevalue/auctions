@@ -11,16 +11,16 @@
     }">
       <Connect @connected="$event => navigateTo({ name: 'id', params: { id: mainAuctionId } }, { replace: true })">
         <template #connected>
-          <pre>
-            {{ displayPrice.value }} {{ displayPrice.format }}
-            $ {{ dollarPrice }}
-            Block: {{ currentBlock }}
-
-            ---
-
-            main auction: {{ mainAuctionId }}
-            latest auction: {{ latestAuctionId }}
-          </pre>
+          <!-- <pre> -->
+          <!--   {{ displayPrice.value }} {{ displayPrice.format }} -->
+          <!--   $ {{ dollarPrice }} -->
+          <!--   Block: {{ currentBlock }} -->
+          <!---->
+          <!--   --- -->
+          <!---->
+          <!--   main auction: {{ mainAuctionId }} -->
+          <!--   latest auction: {{ latestAuctionId }} -->
+          <!-- </pre> -->
         </template>
       </Connect>
     </Auctions>

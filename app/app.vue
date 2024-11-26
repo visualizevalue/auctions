@@ -1,14 +1,15 @@
 <template>
   <main>
-    <Auction id="3" />
+    <Auction v-if="scope" :id="scope" />
+    <NuxtPage v-else />
   </main>
 </template>
 
-<!-- <template> -->
-<!--   <main> -->
-<!--     <NuxtPage /> -->
-<!--   </main> -->
-<!-- </template> -->
+<script setup>
+const config = useRuntimeConfig()
+
+const scope = computed(() => config.public.auctionId)
+</script>
 
 <style scoped>
 main {
