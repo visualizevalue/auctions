@@ -2,7 +2,7 @@ import { getBalance, getPublicClient, readContract } from '@wagmi/core'
 import { type GetBalanceReturnType } from '@wagmi/core'
 import { parseAbiItem, type PublicClient } from 'viem'
 
-export const CURRENT_STATE_VERSION = 1
+export const CURRENT_STATE_VERSION = 2
 export const MAX_BLOCK_RANGE = 1800n
 export const MINT_BLOCKS = BLOCKS_PER_DAY
 
