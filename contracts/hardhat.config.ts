@@ -7,7 +7,8 @@ import '@nomicfoundation/hardhat-ledger'
 import 'hardhat-chai-matchers-viem'
 import 'hardhat-contract-sizer'
 
-// import './tasks/accounts'
+import './tasks/accounts'
+import './tasks/export-abis'
 
 dotenv.config()
 
