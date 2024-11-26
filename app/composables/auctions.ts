@@ -82,7 +82,7 @@ export const useOnchainStore = () => {
         const currentBlock = Number(await client.getBlockNumber())
         const deltaToEnd = parseInt((auction.endTimestamp - nowInSeconds()) / Number(BLOCK_TIME))
         auction.untilBlockEstimate = currentBlock + deltaToEnd
-        auction.createdBlockEstimate = auction.untilBlockEstimate - Number(BLOCKS_PER_DAY - 600n)
+        auction.createdBlockEstimate = auction.untilBlockEstimate - Number(BLOCKS_PER_DAY) - 600
 
         auction.endTimestamp = endTimestamp
         auction.settled = settled
@@ -148,7 +148,7 @@ export const useOnchainStore = () => {
         const currentBlock = Number(await client.getBlockNumber())
         const deltaToEnd = parseInt((auction.endTimestamp - nowInSeconds()) / Number(BLOCK_TIME))
         auction.untilBlockEstimate = currentBlock + deltaToEnd
-        auction.createdBlockEstimate = auction.untilBlockEstimate - Number(BLOCKS_PER_DAY - 600n)
+        auction.createdBlockEstimate = auction.untilBlockEstimate - Number(BLOCKS_PER_DAY) - 600
 
         this.auctions[id] = auction
 
