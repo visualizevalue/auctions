@@ -13,8 +13,8 @@ struct Auction {
     address tokenContract;
     uint256 tokenId;
     uint80  tokenAmount;
-    uint8   tokenStandard;
-    uint48  endTimestamp;
+    uint16  tokenStandard;
+    uint40  endTimestamp;
     bool    settled;
     uint112 latestBid;
     address latestBidder;
@@ -27,10 +27,10 @@ contract Auctions is
     ReentrancyGuard
 {
     /// @notice The auctions are all one day (+ variable bid grace period increments).
-    uint48 public immutable AUCTION_DURATION = 24 hours;
+    uint40 public immutable AUCTION_DURATION = 24 hours;
 
     /// @notice Minimum auction duration after a bid in seconds (5 minutes).
-    uint48 public immutable BIDDING_GRACE_PERIOD = 5 minutes;
+    uint40 public immutable BIDDING_GRACE_PERIOD = 5 minutes;
 
     /// @notice Each bid has to increase by at least 10%
     uint256 public immutable BID_PERCENTAGE_INCREASE = 10;
@@ -42,7 +42,7 @@ contract Auctions is
     uint256 public auctionId;
 
     /// @dev Each auction is identified by an ID
-    mapping(uint256 => Auction) private _auctions;
+    mapping(uint256 => Auction) public auctions;
 
     /// @dev When the automatic refunds of previous bids fail, they are stored in here
     mapping(address => uint256) private _balances;
@@ -53,7 +53,7 @@ contract Auctions is
         address indexed tokenContract,
         uint256 indexed tokenId,
         uint16  tokenERCStandard,
-        uint48  endTimestamp,
+        uint40  endTimestamp,
         address beneficiary
     );
 
@@ -99,7 +99,7 @@ contract Auctions is
         _initializeAuction(
             tokenContract,
             tokenId,
-            1,
+            721,
             1,
             _getBeneficiary(data, from)
         );
@@ -126,7 +126,7 @@ contract Auctions is
         _initializeAuction(
             tokenContract,
             id,
-            2,
+            1155,
             uint80(value),
             _getBeneficiary(data, from)
         );
@@ -134,45 +134,15 @@ contract Auctions is
         return this.onERC1155Received.selector;
     }
 
-    /// @dev Get an Auction by its ID
-    function getAuction(uint256 id)
-        public
-        view
-        returns (
-            address tokenContract,
-            uint256 tokenId,
-            uint80  tokenAmount,
-            uint16  tokenERCStandard,
-            uint48  endTimestamp,
-            bool    settled,
-            uint112 latestBid,
-            address latestBidder,
-            address beneficiary
-        )
-    {
-        Auction memory auction = _auctions[id];
-        return (
-            auction.tokenContract,
-            auction.tokenId,
-            auction.tokenAmount,
-            _getERCStandard(auction.tokenStandard),
-            auction.endTimestamp,
-            auction.settled,
-            auction.latestBid,
-            auction.latestBidder,
-            auction.beneficiary
-        );
-    }
-
     /// @dev The minimum value of the next bid for an auction.
     function currentBidPrice(uint256 id) external view returns (uint256) {
-        return _currentBidPrice(_auctions[id]);
+        return _currentBidPrice(auctions[id]);
     }
 
     /// @dev Enter a new bid
     /// @param id The Auction ID to bid on
     function bid(uint256 id) external payable {
-        Auction storage auction = _auctions[id];
+        Auction storage auction = auctions[id];
 
         address previousBidder = auction.latestBidder;
         uint256 previousBid    = auction.latestBid;
@@ -202,7 +172,7 @@ contract Auctions is
     /// @dev Settles an auction
     /// @param id The Auction ID to claim.
     function settle(uint256 id) external {
-        Auction storage auction = _auctions[id];
+        Auction storage auction = auctions[id];
         if (auction.settled) revert AuctionAlreadySettled();
         if (auction.endTimestamp == 0) revert AuctionDoesNotExist();
         if (block.timestamp <= auction.endTimestamp) revert AuctionNotComplete();
@@ -219,14 +189,14 @@ contract Auctions is
         }
 
         // Transfer the NFT to the winner
-        if (auction.tokenStandard == 1) {
+        if (auction.tokenStandard == 721) {
             IERC721(auction.tokenContract).safeTransferFrom(
                 address(this),
                 winner,
                 auction.tokenId,
                 ""
             );
-        } else if (auction.tokenStandard == 2) {
+        } else if (auction.tokenStandard == 1155) {
             IERC1155(auction.tokenContract).safeTransferFrom(
                 address(this),
                 winner,
@@ -277,28 +247,28 @@ contract Auctions is
     function _initializeAuction(
         address tokenContract,
         uint256 tokenId,
-        uint8   tokenStandard,
+        uint16  tokenStandard,
         uint80  tokenAmount,
         address payable beneficiary
     ) internal {
         auctionId++;
 
-        uint48 endTimestamp = uint48(block.timestamp + AUCTION_DURATION);
+        uint40 endTimestamp = uint40(block.timestamp + AUCTION_DURATION);
 
-        Auction storage auction = _auctions[auctionId];
+        Auction storage auction = auctions[auctionId];
 
         auction.tokenContract = tokenContract;
-        auction.tokenId =       tokenId;
-        auction.tokenAmount =   tokenAmount;
+        auction.tokenId       = tokenId;
+        auction.tokenAmount   = tokenAmount;
         auction.tokenStandard = tokenStandard;
-        auction.endTimestamp =  endTimestamp;
-        auction.beneficiary =   beneficiary;
+        auction.endTimestamp  = endTimestamp;
+        auction.beneficiary   = beneficiary;
 
         emit AuctionInitialised(
             auctionId,
             tokenContract,
             tokenId,
-            _getERCStandard(tokenStandard),
+            tokenStandard,
             endTimestamp,
             beneficiary
         );
@@ -306,20 +276,12 @@ contract Auctions is
 
     /// @dev Extends the end time of an auction if we are within the grace period.
     function _maybeExtendTime(uint256 id, Auction storage auction) internal {
-        uint48 gracePeriodStart = auction.endTimestamp - BIDDING_GRACE_PERIOD;
-        uint48 _now = uint48(block.timestamp);
+        uint40 gracePeriodStart = auction.endTimestamp - BIDDING_GRACE_PERIOD;
+        uint40 _now = uint40(block.timestamp);
         if (_now > gracePeriodStart) {
             auction.endTimestamp = _now + BIDDING_GRACE_PERIOD;
             emit AuctionExtended(id, auction.endTimestamp);
         }
-    }
-
-    /// @dev Parses the token standard to their ERC identifier.
-    function _getERCStandard(uint8 standard) internal pure returns (uint16) {
-        if (standard == 1) return 721;
-        if (standard == 2) return 1155;
-
-        revert UnsupportedTokenStandard();
     }
 
     /// @dev Calculates the minimum price for the next bid

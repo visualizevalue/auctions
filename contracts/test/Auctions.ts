@@ -30,7 +30,7 @@ describe('Auctions', function () {
 
   describe('ERC721 Auctions', function () {
     it('initializes auction when ERC721 token is received', async function () {
-      const { auctions, mockERC721, owner, publicClient } = await loadFixture(baseFixture)
+      const { auctions, mockERC721, owner, publicClient, getAuction } = await loadFixture(baseFixture)
 
       await mockERC721.write.safeTransferFrom([
         owner.account.address,
@@ -42,34 +42,24 @@ describe('Auctions', function () {
       const auctionId = await auctions.read.auctionId()
       expect(auctionId).to.equal(1n)
 
-      const [
-        tokenContract,
-        tokenId,
-        tokenAmount,
-        tokenERCStandard,
-        endTimestamp,
-        settled,
-        latestBid,
-        latestBidder,
-        beneficiary,
-      ] = await auctions.read.getAuction([1n])
+      const auction = await getAuction(1n)
 
       const block = await publicClient.getBlock()
       const expectedEndTime = block.timestamp + 24n * 60n * 60n
 
-      expect(tokenContract).to.equal(getAddress(mockERC721.address))
-      expect(tokenId).to.equal(1n)
-      expect(tokenAmount).to.equal(1n)
-      expect(tokenERCStandard).to.equal(721n)
-      expect(endTimestamp).to.equal(expectedEndTime)
-      expect(settled).to.equal(false)
-      expect(latestBid).to.equal(0n)
-      expect(latestBidder).to.equal(zeroAddress)
-      expect(beneficiary).to.equal(getAddress(owner.account.address))
+      expect(auction.tokenContract).to.equal(getAddress(mockERC721.address))
+      expect(auction.tokenId).to.equal(1n)
+      expect(auction.tokenAmount).to.equal(1n)
+      expect(auction.tokenERCStandard).to.equal(721n)
+      expect(auction.endTimestamp).to.equal(expectedEndTime)
+      expect(auction.settled).to.equal(false)
+      expect(auction.latestBid).to.equal(0n)
+      expect(auction.latestBidder).to.equal(zeroAddress)
+      expect(auction.beneficiary).to.equal(getAddress(owner.account.address))
     })
 
     it('allows custom beneficiary for ERC721 auction', async function () {
-      const { auctions, mockERC721, owner, recipient } = await loadFixture(baseFixture)
+      const { auctions, mockERC721, owner, recipient, getAuction } = await loadFixture(baseFixture)
 
       const beneficiaryData = encodeAbiParameters(
         [ { type: 'address', name: 'beneficiary' } ],
@@ -82,26 +72,15 @@ describe('Auctions', function () {
         beneficiaryData
       ])
 
-      const auction = await auctions.read.getAuction([1n])
-      const [
-        _tokenContract,
-        _tokenId,
-        _tokenAmount,
-        _tokenERCStandard,
-        _endTimestamp,
-        _settled,
-        _latestBid,
-        _latestBidder,
-        beneficiary,
-      ] = await auctions.read.getAuction([1n])
+      const { beneficiary } = await getAuction(1n)
 
       expect(beneficiary).to.equal(getAddress(recipient.account.address))
     })
   })
 
-  describe.skip('ERC1155 Auctions', function () {
+  describe('ERC1155 Auctions', function () {
     it('initializes auction when ERC1155 tokens are received', async function () {
-      const { auctions, mockERC1155, owner } = await loadFixture(baseFixture)
+      const { auctions, mockERC1155, owner, publicClient, getAuction } = await loadFixture(baseFixture)
 
       await mockERC1155.write.safeTransferFrom([
         owner.account.address,
@@ -111,11 +90,20 @@ describe('Auctions', function () {
         '0x'
       ])
 
-      const auction = await auctions.read.getAuction([1n])
+      const auction = await getAuction(1n)
+
+      const block = await publicClient.getBlock()
+      const expectedEndTime = block.timestamp + 24n * 60n * 60n
+
       expect(auction.tokenContract).to.equal(getAddress(mockERC1155.address))
       expect(auction.tokenId).to.equal(1n)
       expect(auction.tokenAmount).to.equal(5n)
       expect(auction.tokenERCStandard).to.equal(1155n)
+      expect(auction.endTimestamp).to.equal(expectedEndTime)
+      expect(auction.settled).to.equal(false)
+      expect(auction.latestBid).to.equal(0n)
+      expect(auction.latestBidder).to.equal(zeroAddress)
+      expect(auction.beneficiary).to.equal(getAddress(owner.account.address))
     })
 
     it('reverts when too many ERC1155 tokens are transferred', async function () {
@@ -136,9 +124,9 @@ describe('Auctions', function () {
     })
   })
 
-  describe.skip('Bidding', function () {
+  describe('Bidding', function () {
     it('allows valid bid', async function () {
-      const { auctions, mockERC721, owner, bidder1 } = await loadFixture(baseFixture)
+      const { auctions, mockERC721, owner, bidder1, getAuction, publicClient } = await loadFixture(baseFixture)
 
       // Create auction
       await mockERC721.write.safeTransferFrom([
@@ -148,15 +136,16 @@ describe('Auctions', function () {
         '0x'
       ])
 
-      const minBid = await auctions.read.currentBidPrice([1n])
+      const gasPrice = await publicClient.getGasPrice()
+      const minBid = gasPrice * 60_000n
       await auctions.write.bid([1n], { value: minBid })
 
-      const auction = await auctions.read.getAuction([1n])
+      const auction = await getAuction(1n)
       expect(auction.latestBid).to.equal(minBid)
     })
 
     it('rejects bid below minimum', async function () {
-      const { auctions, mockERC721, owner } = await loadFixture(baseFixture)
+      const { auctions, mockERC721, owner, publicClient } = await loadFixture(baseFixture)
 
       await mockERC721.write.safeTransferFrom([
         owner.account.address,
@@ -165,14 +154,13 @@ describe('Auctions', function () {
         '0x'
       ])
 
-      const minBid = await auctions.read.currentBidPrice([1n])
       await expect(
-        auctions.write.bid([1n], { value: minBid - 1n })
+        auctions.write.bid([1n], { value: 1n })
       ).to.be.rejectedWith('MinimumBidNotMet')
     })
 
     it('extends auction time during grace period', async function () {
-      const { auctions, mockERC721, owner, bidder1 } = await loadFixture(baseFixture)
+      const { auctions, mockERC721, owner, bidder1, publicClient, getAuction } = await loadFixture(baseFixture)
 
       await mockERC721.write.safeTransferFrom([
         owner.account.address,
@@ -181,24 +169,26 @@ describe('Auctions', function () {
         '0x'
       ])
 
-      const minBid = await auctions.read.currentBidPrice([1n])
+      const gasPrice = await publicClient.getGasPrice()
+      const minBid = gasPrice * 60_000n
       await auctions.write.bid([1n], { value: minBid })
 
       // Fast forward to grace period
-      const auction = await auctions.read.getAuction([1n])
-      await time.increaseTo(auction.endTimestamp - BigInt(4 * 60)) // 4 minutes before end
+      const auction = await getAuction(1n)
+      await time.increaseTo(auction.endTimestamp - 4 * 60) // 4 minutes before end
 
       // Place new bid
       const newBid = await auctions.read.currentBidPrice([1n])
+      expect(newBid).to.equal(minBid * 110n / 100n)
       await auctions.write.bid([1n], { value: newBid })
 
       // Check auction was extended
-      const updatedAuction = await auctions.read.getAuction([1n])
+      const updatedAuction = await getAuction(1n)
       expect(updatedAuction.endTimestamp).to.be.greaterThan(auction.endTimestamp)
     })
 
     it('refunds previous bidder', async function () {
-      const { auctions, mockERC721, owner, bidder1, bidder2 } = await loadFixture(baseFixture)
+      const { auctions, mockERC721, owner, bidder1, bidder2, publicClient} = await loadFixture(baseFixture)
 
       await mockERC721.write.safeTransferFrom([
         owner.account.address,
@@ -208,16 +198,17 @@ describe('Auctions', function () {
       ])
 
       // First bid
-      const minBid = await auctions.read.currentBidPrice([1n])
+      const gasPrice = await publicClient.getGasPrice()
+      const minBid = gasPrice * 60_000n
       await auctions.write.bid([1n], { account: bidder1.account, value: minBid })
 
-      const bidder1InitialBalance = await hre.viem.getBalance(bidder1.account.address)
+      const bidder1InitialBalance = await publicClient.getBalance(bidder1.account)
 
       // Second bid
       const newBid = await auctions.read.currentBidPrice([1n])
       await auctions.write.bid([1n], { account: bidder2.account, value: newBid })
 
-      const bidder1FinalBalance = await hre.viem.getBalance(bidder1.account.address)
+      const bidder1FinalBalance = await publicClient.getBalance(bidder1.account)
       expect(bidder1FinalBalance).to.equal(bidder1InitialBalance + minBid)
     })
   })

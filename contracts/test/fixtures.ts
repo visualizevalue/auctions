@@ -21,6 +21,33 @@ export async function baseFixture() {
   await mockERC721.write.setApprovalForAll([auctions.address, true])
   await mockERC1155.write.setApprovalForAll([auctions.address, true])
 
+  // Add helper for auctions contract
+  const getAuction = async (id: bigint) => {
+    const [
+      tokenContract,
+      tokenId,
+      tokenAmount,
+      tokenERCStandard,
+      endTimestamp,
+      settled,
+      latestBid,
+      latestBidder,
+      beneficiary,
+    ] = await auctions.read.auctions([id])
+
+    return {
+      tokenContract,
+      tokenId,
+      tokenAmount,
+      tokenERCStandard,
+      endTimestamp,
+      settled,
+      latestBid,
+      latestBidder,
+      beneficiary,
+    }
+  }
+
   return {
     auctions,
     mockERC721,
@@ -29,6 +56,7 @@ export async function baseFixture() {
     bidder1,
     bidder2,
     recipient,
-    publicClient
+    publicClient,
+    getAuction,
   }
 }
