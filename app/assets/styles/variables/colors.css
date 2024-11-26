@@ -1,0 +1,20 @@
+:root {
+  /* GRAYS */
+  --white:    white;
+  --gray:     gray;
+  --black:    black;
+
+  /* COLORS */
+  --primary:   blue;
+  --error:     red;
+
+  /*
+  * Z-COLORS
+  * This makes migrating to dark/light modes much easier.
+  * We're not thinking about color per se, but about the viewers perspective.
+  */
+  --background: var(--white);
+  --muted:      var(--gray);
+  --color:      var(--black);
+}
+

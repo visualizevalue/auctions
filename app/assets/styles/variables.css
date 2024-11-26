@@ -1,0 +1,17 @@
+/*
+* Here we import the individual variable files.
+* They are thematically grouped. Note that the order matters,
+* since some files depend on others.
+*/
+
+@import "./variables/colors.css";
+@import "./variables/sizes.css";
+@import "./variables/fonts.css";
+@import "./variables/borders.css";
+@import "./variables/effects.css";
+@import "./variables/animations.css";
+
+@import "./variables/ui.css";
+@import "./variables/components.css";
+@import "./variables/layout.css";
+
