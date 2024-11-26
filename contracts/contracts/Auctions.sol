@@ -137,16 +137,16 @@ contract Auctions is ERC721Holder, ERC1155Holder {
 
         address previousBidder = auction.latestBidder;
         uint256 previousBid    = auction.latestBid;
-        uint256 bidValue       = msg.value;
         address bidder         = msg.sender;
+        uint256 bid            = msg.value;
 
-        if (bidValue < _currentBidPrice(auction)) revert MinimumBidNotMet();
+        if (bid < _currentBidPrice(auction)) revert MinimumBidNotMet();
         if (block.timestamp > auction.endTimestamp) revert AuctionNotActive();
 
         _maybeExtendTime(id, auction);
 
         // Store the bid
-        auction.latestBid    = uint112(bidValue);
+        auction.latestBid    = uint112(bid);
         auction.latestBidder = bidder;
 
         // Pay back previous bidder
@@ -157,22 +157,26 @@ contract Auctions is ERC721Holder, ERC1155Holder {
             }
         }
 
-        emit Bid(id, bidValue, bidder);
+        emit Bid(id, bid, bidder);
     }
 
     /// @dev Settles an auction
     /// @param id The Auction ID to claim.
     function settle(uint256 id) external {
         Auction storage auction = auctions[id];
+
         if (auction.settled) revert AuctionAlreadySettled();
         if (auction.endTimestamp == 0) revert AuctionDoesNotExist();
         if (block.timestamp <= auction.endTimestamp) revert AuctionNotComplete();
 
-        address winner = _hasBid(auction) ? auction.latestBidder : auction.beneficiary;
+        bool hasBid = _hasBid(auction);
+        address winner = hasBid ? auction.latestBidder : auction.beneficiary;
+
+        // Mark the auction as settled.
         auction.settled = true;
 
         // Send the funds to the beneficiary if there was a bid
-        if (_hasBid(auction)) {
+        if (hasBid) {
             (bool success,) = auction.beneficiary.call{value: auction.latestBid}("");
             if (!success) {
                 balances[auction.beneficiary] += auction.latestBid;
@@ -203,9 +207,7 @@ contract Auctions is ERC721Holder, ERC1155Holder {
     /// @dev Withdraw user balance in case automatic refund in bid failed.
     function withdraw() external {
         uint256 amount = balances[msg.sender];
-        if (amount == 0) {
-            revert NoBalanceToWithdraw();
-        }
+        if (amount == 0) revert NoBalanceToWithdraw();
 
         // Set balance to zero because it could be called again in receive before call returns
         balances[msg.sender] = 0;
