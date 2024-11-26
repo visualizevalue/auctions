@@ -1,6 +1,13 @@
 <template>
   <Loading v-if="status !== 'success'" />
-  <AuctionDetail v-else :auction="auction" />
+  <AuctionDetail v-else :auction="auction">
+    <template #header-after>
+      <slot name="header-after" />
+    </template>
+    <template #secondary-details>
+      <slot name="secondary-details" />
+    </template>
+  </AuctionDetail>
 </template>
 
 <script setup>

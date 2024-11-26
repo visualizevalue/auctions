@@ -39,7 +39,10 @@
           <!-- <p v-if="collection" class="artist"> -->
           <!--   {{ $t('token.by') }} <NuxtLink :to="{ name: 'id', params: { id: collection.owner } }">{{ store.displayName(collection.owner) }}</NuxtLink> -->
           <!-- </p> -->
+          <slot name="header-after" />
         </header>
+
+        <slot name="secondary-details" />
 
         <div v-if="auctionOpen">
           <BidOnAuctionBar
