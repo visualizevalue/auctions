@@ -5,8 +5,8 @@
       type="number"
       v-model="value"
       :min="minimumEth"
-      step="0.1"
       required
+      suffix="ETH"
       class="amount"
     />
     <TransactionFlow
@@ -19,7 +19,6 @@
       <template #start="{ start }">
         <Button @click="start" class="bid">
           Bid
-          {{ displayPrice }} ETH
           (${{ dollarPrice }})
         </Button>
       </template>
@@ -42,7 +41,7 @@ const props = defineProps({
   bidComplete: Function,
 })
 
-const minimum = computed(() => props.auction.currentBidPrice || '1000')
+const minimum = computed(() => props.auction.currentBidPrice || parseEther('0.001'))
 const minimumEth = computed(() => formatEther(minimum.value))
 
 const value = defineModel('value', { default: '0.1' })
