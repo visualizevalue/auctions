@@ -65,9 +65,15 @@
           <p v-if="auctionOpen">
             <AuctionBidOpen :time="countDownStr" />
           </p>
-          <p v-else-if="currentBlock">
-            {{ $t('auction.closed_on', { date: formatDateTime(isoDateFromSeconds (auction.endTimestamp)) })}}
-          </p>
+          <template v-else-if="currentBlock">
+            <p>
+              <span>
+                {{ $t('auction.closed_on', { date: formatDateTime(isoDateFromSeconds (auction.endTimestamp)) })}}
+              </span>
+              <span> · </span>
+              <span>Auction won by <Account :address="auction.latestBidder" /></span>
+            </p>
+          </template>
         </div>
 
         <AuctionBidTimeline :auction="auction" />
@@ -77,6 +83,8 @@
 </template>
 
 <script setup lang="ts">
+import { formatEther } from 'viem'
+
 const { auction } = defineProps<{
   auction: Auction
 }>()
