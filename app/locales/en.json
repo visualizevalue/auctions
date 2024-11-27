@@ -10,7 +10,7 @@
         "closes_in": "Closes in {time}",
         "closed_ago": "Closed {time} ago",
         "closed_on": "Closed on {date}",
-        "bid_timeline": "Bid Timeline",
+        "bid_timeline": "Auction Timeline",
         "blocks_ago": "just now | one block ago | {blocks} blocks ago",
         "loading_bid_history": "Loading Bid History..."
     },

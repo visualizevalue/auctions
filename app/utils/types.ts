@@ -31,6 +31,8 @@ export interface Auction {
   createdBlockEstimate: number
   untilBlockEstimate: number
   currentBidPrice: bigint
+  initEvent: InitEvent
+  settleEvent?: SettleEvent
 }
 
 export interface Collection {
@@ -59,3 +61,19 @@ export interface BidEvent {
   tx: string
   value: bigint
 }
+
+export interface InitEvent {
+  block: bigint
+  logIndex: number
+  tx: string
+  timestamp?: bigint
+}
+
+export interface SettleEvent {
+  block: bigint
+  logIndex: number
+  tx: string
+  timestamp?: bigint
+  from: `0x${string}`
+}
+

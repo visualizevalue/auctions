@@ -2,8 +2,8 @@ import { getBalance, getPublicClient, readContract } from '@wagmi/core'
 import { type GetBalanceReturnType } from '@wagmi/core'
 import { parseAbiItem, type PublicClient } from 'viem'
 
-export const CURRENT_STATE_VERSION = 2
-export const MAX_BLOCK_RANGE = 1800n
+export const CURRENT_STATE_VERSION = 3
+export const MAX_BLOCK_RANGE = 5000n
 export const MINT_BLOCKS = BLOCKS_PER_DAY
 
 export const useOnchainStore = () => {
@@ -60,6 +60,8 @@ export const useOnchainStore = () => {
         const auction = this.auctions[id]
         if (! auction) return this.fetchAuction(id)
 
+        console.info(`Updating auction #${id}`)
+
         // Update chain data
         const [
           tokenContract,
@@ -89,6 +91,27 @@ export const useOnchainStore = () => {
         auction.latestBid = latestBid
         auction.latestBidder = latestBidder
 
+        if (settled && ! auction.settleEvent) {
+          const [settledLog] = await client.getLogs({
+            address: auctionsAddress,
+            event: parseAbiItem('event AuctionSettled(uint256 indexed auctionId, address indexed winner, address indexed beneficiary, uint256 amount)'),
+            args: {
+              auctionId: BigInt(auction.id),
+            },
+            fromBlock: BigInt(auction.untilBlockEstimate - 600),
+            toBlock: 'latest'
+          })
+
+          const tx = await client.getTransaction({ hash: settledLog.transactionHash })
+
+          auction.settleEvent = {
+            block: settledLog.blockNumber,
+            logIndex: settledLog.logIndex,
+            tx: settledLog.transactionHash,
+            from: tx.from
+          }
+        }
+
         return auction
       },
 
@@ -111,6 +134,11 @@ export const useOnchainStore = () => {
           chainId,
         })
 
+        const currentBlock = Number(await client.getBlockNumber())
+        const deltaToEnd = parseInt((endTimestamp - nowInSeconds()) / Number(BLOCK_TIME))
+        const untilBlockEstimate = currentBlock + deltaToEnd
+        const createdBlockEstimate = untilBlockEstimate - Number(BLOCKS_PER_DAY) - 600
+
         const collection: Collection = {
           address: tokenContract,
           tokenStandard: tokenERCStandard,
@@ -128,6 +156,15 @@ export const useOnchainStore = () => {
           animationUrl: await resolveURI(metadata.animation_url, { ipfs: config.public.ipfsGateway, ar: config.public.arweaveGateway }),
         }
 
+        const [initLog] = await client.getLogs({
+          address: auctionsAddress,
+          event: parseAbiItem('event AuctionInitialised(uint256 indexed auctionId, address indexed tokenContract, uint256 indexed tokenId, uint16 tokenERCStandard, uint40 endTimestamp, address beneficiary)'),
+          args: {
+            auctionId: BigInt(id),
+          },
+          fromBlock: BigInt(createdBlockEstimate),
+        })
+
         const auction: Auction = {
           id,
           collection,
@@ -140,15 +177,15 @@ export const useOnchainStore = () => {
           beneficiary,
           bidsFetchedUntilBlock: 0n,
           bidsBackfilledUntilBlock: 0n,
-          createdBlockEstimate: 0,
-          untilBlockEstimate: 0,
+          createdBlockEstimate,
+          untilBlockEstimate,
           bids: [],
+          initEvent: {
+            block: initLog.blockNumber,
+            logIndex: initLog.logIndex,
+            tx: initLog.transactionHash,
+          }
         }
-
-        const currentBlock = Number(await client.getBlockNumber())
-        const deltaToEnd = parseInt((auction.endTimestamp - nowInSeconds()) / Number(BLOCK_TIME))
-        auction.untilBlockEstimate = currentBlock + deltaToEnd
-        auction.createdBlockEstimate = auction.untilBlockEstimate - Number(BLOCKS_PER_DAY) - 600
 
         this.auctions[id] = auction
 
@@ -207,7 +244,12 @@ export const useOnchainStore = () => {
         }
 
         // Update minimum bid
-        if (! newBids.length) await this.fetchMinimumBid(id)
+        if (newBids.length) {
+          await Promise.all([
+            this.getAuction(id),
+            this.fetchMinimumBid(id),
+          ])
+        }
       },
 
       async backfillAuctionBids (id: bigint) {

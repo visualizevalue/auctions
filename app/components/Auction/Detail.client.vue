@@ -59,6 +59,7 @@
             }"
           />
         </div>
+        <SettleAuction v-else :auction="auction" />
 
         <div class="auction-status">
           <p v-if="auctionOpen">

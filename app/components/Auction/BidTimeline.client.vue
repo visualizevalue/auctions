@@ -4,16 +4,44 @@
       <h1>{{ $t('auction.bid_timeline') }}</h1>
 
       <template v-if="currentBlock">
+        <AuctionBidTimelineItem v-if="auction.settleEvent">
+          <Account :address="auction.settleEvent.from" />
+
+          <span class="price">
+            Settled Auction
+          </span>
+
+          <span class="time-ago"><BlocksTimeAgo :blocks="currentBlock - auction.settleEvent.block" /></span>
+
+          <span class="links">
+            <NuxtLink :to="`${config.public.blockExplorer}/tx/${auction.settleEvent.tx}`" target="_blank">
+              <Icon type="link" />
+            </NuxtLink>
+          </span>
+        </AuctionBidTimelineItem>
+
         <AuctionBidTimelineItem
           v-for="bid in bids"
           :bid="bid"
           :key="bid.tx"
           :block="currentBlock"
         />
-        <!-- <AuctionBidTimelineVirtualScroller -->
-        <!--   :bids="bids" -->
-        <!--   :block="currentBlock" -->
-        <!-- /> -->
+
+        <AuctionBidTimelineItem v-if="auction.initEvent">
+          <Account :address="auction.beneficiary" />
+
+          <span class="price">
+            Initialized Auction
+          </span>
+
+          <span class="time-ago"><BlocksTimeAgo :blocks="currentBlock - auction.initEvent.block" /></span>
+
+          <span class="links">
+            <NuxtLink :to="`${config.public.blockExplorer}/tx/${auction.initEvent.tx}`" target="_blank">
+              <Icon type="link" />
+            </NuxtLink>
+          </span>
+        </AuctionBidTimelineItem>
       </template>
 
       <div v-if="! backfillComplete" v-show="! loading" ref="loadMore" class="load-more">
@@ -50,9 +78,9 @@ const backfill = async () => {
   try {
     await state.backfillAuctionBids(props.auction.id)
 
-    // If we're not fully backfilled and we have less than 20 mints loaded,
+    // If we're not fully backfilled and we have less than 20 bids loaded,
     // continue backfilling events.
-    while (! backfillComplete.value && mints.value?.length < 20) {
+    while (! backfillComplete.value && bids.value?.length < 20) {
       await delay(250)
       await state.backfillAuctionBids(props.auction.id)
     }
@@ -76,7 +104,7 @@ onMounted(async () => {
 })
 
 watch(loadMoreVisible, () => {
-  // Skip if we have enough mints for the viewport or we're already loading
+  // Skip if we have enough bids for the viewport or we're already loading
   if (! loadMoreVisible.value || loading.value) return
 
   backfill()
