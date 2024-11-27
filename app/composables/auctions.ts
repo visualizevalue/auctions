@@ -2,7 +2,7 @@ import { getBalance, getPublicClient, readContract } from '@wagmi/core'
 import { type GetBalanceReturnType } from '@wagmi/core'
 import { parseAbiItem, type PublicClient } from 'viem'
 
-export const CURRENT_STATE_VERSION = 3
+export const CURRENT_STATE_VERSION = 4
 export const MAX_BLOCK_RANGE = 5000n
 export const MINT_BLOCKS = BLOCKS_PER_DAY
 
@@ -57,6 +57,8 @@ export const useOnchainStore = () => {
       },
 
       async getAuction (id: bigint): Promise<Auction> {
+        this.ensureStoreVersion()
+
         const auction = this.auctions[id]
         if (! auction) return this.fetchAuction(id)
 
