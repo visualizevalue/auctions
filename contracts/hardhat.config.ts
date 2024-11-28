@@ -12,8 +12,8 @@ import './tasks/export-abis'
 
 dotenv.config()
 
-const LEDGER_ACCOUNTS: string[] = process.env.LEDGER_ACCOUNT ? [process.env.LEDGER_ACCOUNT] : []
-const ACCOUNT_PRVKEYS: string[] = process.env.PRIVATE_KEY    ? [process.env.PRIVATE_KEY   ] : []
+const LEDGER_ACCOUNTS: string[]|undefined = process.env.LEDGER_ACCOUNT ? [process.env.LEDGER_ACCOUNT] : undefined
+const ACCOUNT_PRVKEYS: string[]|undefined = process.env.PRIVATE_KEY    ? [process.env.PRIVATE_KEY   ] : undefined
 const DEPLOY_AUTH: string = process.env.DEPLOY_AUTH || zeroAddress
 const REDEPLOY_PROTECTION: string = process.env.REDEPLOY_PROTECTION === 'true' ? `01` : `00`
 const ENTROPY: string = process.env.ENTROPY || `0000000000000000000009`
