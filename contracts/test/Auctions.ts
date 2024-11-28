@@ -211,6 +211,57 @@ describe('Auctions', function () {
       const bidder1FinalBalance = await publicClient.getBalance(bidder1.account)
       expect(bidder1FinalBalance).to.equal(bidder1InitialBalance + minBid)
     })
+
+    it('prevents reverting DOS attacks on bids', async function () {
+      const { auctions, mockERC721, mockBidDOS, owner, bidder1, publicClient } = await loadFixture(baseFixture)
+
+      // Create auction and place bid
+      await mockERC721.write.safeTransferFrom([
+        owner.account.address,
+        auctions.address,
+        1n,
+        '0x'
+      ])
+
+      await mockBidDOS.write.bid([auctions.address, 1n], { value: parseEther('1') })
+
+      let balance = await auctions.read.balances([mockBidDOS.address])
+      expect(balance).to.equal(0n)
+
+      await expect(auctions.write.bid([1n], { account: bidder1.account, value: parseEther('2') }))
+        .not.to.be.reverted
+
+      balance = await auctions.read.balances([mockBidDOS.address])
+      expect(balance).to.equal(parseEther('1'))
+    })
+
+    it('prevents gasdrain DOS attacks on bids', async function () {
+      const { auctions, mockERC721, mockBidDOS, owner, bidder1, publicClient } = await loadFixture(baseFixture)
+
+      // Create auction and place bid
+      await mockERC721.write.safeTransferFrom([
+        owner.account.address,
+        auctions.address,
+        1n,
+        '0x'
+      ])
+
+      await mockBidDOS.write.bid([auctions.address, 1n], { value: parseEther('1') })
+      await mockBidDOS.write.setGasdrain([true])
+
+      let balance = await auctions.read.balances([mockBidDOS.address])
+      expect(balance).to.equal(0n)
+
+      const request = auctions.write.bid([1n], { account: bidder1.account, value: parseEther('2') })
+      const hash = await request
+      const tx = await publicClient.waitForTransactionReceipt({ hash })
+      expect(tx.gasUsed).to.be.lessThan(150_000)
+
+      await expect(request).not.to.be.reverted
+
+      balance = await auctions.read.balances([mockBidDOS.address])
+      expect(balance).to.equal(parseEther('1'))
+    })
   })
 
   describe('Settlement', function () {

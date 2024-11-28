@@ -27,6 +27,7 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 /// @notice You are free to transact.
 /// @author Visualize Value
 contract Auctions is ERC721Holder, ERC1155Holder {
+
     /// @notice The data struct for a given auction.
     struct Auction {
         address tokenContract;
@@ -171,7 +172,7 @@ contract Auctions is ERC721Holder, ERC1155Holder {
 
         // Pay back previous bidder
         if (_hasBid(auction)) {
-            (bool success,) = payable(previousBidder).call{value: previousValue}("");
+            (bool success,) = payable(previousBidder).call{value: previousValue, gas: 60_000}("");
             if (!success) {
                 balances[previousBidder] += previousValue;
             }
@@ -197,7 +198,7 @@ contract Auctions is ERC721Holder, ERC1155Holder {
 
         // Send the funds to the beneficiary if there was a bid
         if (hasBid) {
-            (bool success,) = auction.beneficiary.call{value: auction.latestBid}("");
+            (bool success,) = auction.beneficiary.call{value: auction.latestBid, gas: 60_000}("");
             if (!success) {
                 balances[auction.beneficiary] += auction.latestBid;
             }
@@ -313,5 +314,6 @@ contract Auctions is ERC721Holder, ERC1155Holder {
     function _getMinimumBid() internal view returns (uint256) {
         return block.basefee * 60_000;
     }
+
 }
 
