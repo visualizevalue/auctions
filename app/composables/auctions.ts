@@ -11,7 +11,7 @@ export const useOnchainStore = () => {
   const chainId = useMainChainId()
   const client = getPublicClient($wagmi, { chainId }) as PublicClient
   const config = useRuntimeConfig()
-  const auctionsAddress = config.public.auctionsAddress
+  const auctionsAddress: `0x${string}` = config.public.auctionsAddress
 
   return defineStore('onchainStore', {
     state: () => ({
@@ -65,15 +65,15 @@ export const useOnchainStore = () => {
 
         // Update chain data
         const [
-          tokenContract,
-          tokenId,
-          tokenAmount,
-          tokenERCStandard,
+          _tokenContract,
+          _tokenId,
+          _tokenAmount,
+          _tokenERCStandard,
           endTimestamp,
           settled,
           latestBid,
           latestBidder,
-          beneficiary,
+          _beneficiary,
         ] = await readContract($wagmi, {
           abi: AUCTIONS_ABI,
           address: auctionsAddress,
@@ -82,13 +82,11 @@ export const useOnchainStore = () => {
           chainId,
         })
 
-        const currentBlock = Number(await client.getBlockNumber())
-        const deltaToEnd = parseInt(
-          (auction.endTimestamp - nowInSeconds()) / Number(BLOCK_TIME)
+        const currentBlock = await client.getBlockNumber()
+        const deltaToEnd = BigInt(
+          Math.round((auction.endTimestamp - nowInSeconds()) / Number(BLOCK_TIME))
         )
         auction.untilBlockEstimate = currentBlock + deltaToEnd
-        auction.createdBlockEstimate =
-          auction.untilBlockEstimate - Number(BLOCKS_PER_DAY) - 600
 
         auction.endTimestamp = endTimestamp
         auction.settled = settled
@@ -104,7 +102,7 @@ export const useOnchainStore = () => {
             args: {
               auctionId: BigInt(auction.id),
             },
-            fromBlock: BigInt(auction.untilBlockEstimate - 600),
+            fromBlock: auction.createdBlockEstimate,
             toBlock: 'latest',
           })
 
@@ -142,10 +140,21 @@ export const useOnchainStore = () => {
           chainId,
         })
 
-        const currentBlock = Number(await client.getBlockNumber())
-        const deltaToEnd = parseInt((endTimestamp - nowInSeconds()) / Number(BLOCK_TIME))
-        const untilBlockEstimate = currentBlock + deltaToEnd
-        const createdBlockEstimate = untilBlockEstimate - Number(BLOCKS_PER_DAY) - 600
+        const [initLog] = await client.getLogs({
+          address: auctionsAddress,
+          event: parseAbiItem(
+            'event AuctionInitialised(uint256 indexed auctionId, address indexed tokenContract, uint256 indexed tokenId, uint16 tokenERCStandard, uint40 endTimestamp, address beneficiary)'
+          ),
+          args: {
+            auctionId: BigInt(id),
+          },
+          fromBlock: 0n,
+        })
+
+        const BLOCK_BUFFER = 600n // 2 hours
+        const createdBlockEstimate = initLog.blockNumber
+        console.log('createdBlockEstimate', createdBlockEstimate)
+        const untilBlockEstimate = createdBlockEstimate + BLOCKS_PER_DAY + BLOCK_BUFFER
 
         const collection: Collection = {
           address: tokenContract,
@@ -171,17 +180,6 @@ export const useOnchainStore = () => {
             ar: config.public.arweaveGateway,
           }),
         }
-
-        const [initLog] = await client.getLogs({
-          address: auctionsAddress,
-          event: parseAbiItem(
-            'event AuctionInitialised(uint256 indexed auctionId, address indexed tokenContract, uint256 indexed tokenId, uint16 tokenERCStandard, uint40 endTimestamp, address beneficiary)'
-          ),
-          args: {
-            auctionId: BigInt(id),
-          },
-          fromBlock: BigInt(createdBlockEstimate),
-        })
 
         const auction: Auction = {
           id,
@@ -228,7 +226,7 @@ export const useOnchainStore = () => {
       async fetchAuctionBids(id: bigint) {
         const auction = this.auctions[id.toString()]
         const client = getPublicClient($wagmi, { chainId }) as PublicClient
-        const currentBlock = Number(await client.getBlockNumber())
+        const currentBlock = await client.getBlockNumber()
 
         const createdBlockEstimate = auction.createdBlockEstimate
         const untilBlockEstimate = auction.untilBlockEstimate
@@ -242,7 +240,7 @@ export const useOnchainStore = () => {
 
         // Initially, we want to sync backwards,
         // but at most 5000 blocks (the general max range for an event query)
-        const maxRangeBlock = toBlock - Number(MAX_BLOCK_RANGE)
+        const maxRangeBlock = toBlock - MAX_BLOCK_RANGE
         const fromBlock =
           auction.bidsFetchedUntilBlock > maxRangeBlock // If we've already fetched
             ? auction.bidsFetchedUntilBlock + 1 // we want to continue where we left off
@@ -275,12 +273,12 @@ export const useOnchainStore = () => {
         if (auction.bidsBackfilledUntilBlock <= auction.createdBlockEstimate) return
 
         // We want to fetch the tokens up until where we stopped backfilling (excluding the last block)
-        const toBlock = auction.bidsBackfilledUntilBlock - 1
+        const toBlock = auction.bidsBackfilledUntilBlock - 1n
 
         // We want to fetch until our max range (5000), or until when the auction was created
         const fromBlock =
-          toBlock - Number(MAX_BLOCK_RANGE) > auction.createdBlockEstimate
-            ? toBlock - Number(MAX_BLOCK_RANGE)
+          toBlock - MAX_BLOCK_RANGE > auction.createdBlockEstimate
+            ? toBlock - MAX_BLOCK_RANGE
             : auction.createdBlockEstimate
         console.info(`Backfilling auction bid blocks ${fromBlock}-${toBlock}`)
 
@@ -297,8 +295,8 @@ export const useOnchainStore = () => {
 
       async loadBidEvents(
         auction: Auction,
-        fromBlock: number,
-        toBlock: number
+        fromBlock: bigint,
+        toBlock: bigint
       ): Promise<BidEvent[]> {
         const logs = await client.getLogs({
           address: auctionsAddress,
@@ -308,8 +306,8 @@ export const useOnchainStore = () => {
           args: {
             auctionId: BigInt(auction.id),
           },
-          fromBlock: BigInt(fromBlock),
-          toBlock: BigInt(toBlock),
+          fromBlock: fromBlock,
+          toBlock: toBlock,
         })
 
         console.info(`Bids fetched from ${fromBlock}-${toBlock}`)

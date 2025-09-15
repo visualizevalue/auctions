@@ -57,7 +57,7 @@ const { data: currentBlock } = useBlockNumber({
   chainId: config.public.chainId,
 })
 const blocksRemaining = computed(
-  () => props.auction.untilBlockEstimate - Number(currentBlock.value || 0n)
+  () => props.auction.untilBlockEstimate - (currentBlock.value || 0n)
 )
 const now = useNow()
 const until = computed(() => props.auction.endTimestamp)
