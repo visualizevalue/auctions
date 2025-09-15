@@ -19,4 +19,3 @@ useMetaData({
   title: `Auction`,
 })
 </script>
-

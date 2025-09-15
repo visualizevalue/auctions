@@ -1,5 +1,5 @@
 <template>
-  <Button v-if="! file" type="button" @click="() => open()">
+  <Button v-if="!file" type="button" @click="() => open()">
     <Icon type="image" />
     <span>{{ $t('choose_file') }}</span>
   </Button>
@@ -23,12 +23,12 @@ import { useFileDialog } from '@vueuse/core'
 const props = defineProps({
   accept: {
     type: String,
-    default: 'image/*'
-  }
+    default: 'image/*',
+  },
 })
 
 const emit = defineEmits<{
-  change: [file: File|null|undefined]
+  change: [file: File | null | undefined]
 }>()
 
 const { files, open, reset, onChange } = useFileDialog({
@@ -36,7 +36,7 @@ const { files, open, reset, onChange } = useFileDialog({
   multiple: false,
 })
 
-const file = computed(() => files.value?.length ? files.value[0] : null)
+const file = computed(() => (files.value?.length ? files.value[0] : null))
 onChange(() => emit('change', file.value))
 
 defineExpose({

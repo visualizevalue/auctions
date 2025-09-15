@@ -24,14 +24,16 @@ const dialog = ref()
 onMounted(() => {
   if (props.open) dialog.value.open()
 })
-watch(() => props.open, async () => {
-  if (props.open) dialog.value.open()
-  else {
-    await dialog.value.close()
-
-    // If it's open again (after the animation), open it again...
+watch(
+  () => props.open,
+  async () => {
     if (props.open) dialog.value.open()
-  }
-})
-</script>
+    else {
+      await dialog.value.close()
 
+      // If it's open again (after the animation), open it again...
+      if (props.open) dialog.value.open()
+    }
+  }
+)
+</script>

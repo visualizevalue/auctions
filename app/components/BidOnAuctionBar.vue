@@ -1,5 +1,5 @@
 <template>
-  <Connect v-if="! isConnected" class="block">Connect To Bid</Connect>
+  <Connect v-if="!isConnected" class="block">Connect To Bid</Connect>
   <FormGroup v-else ref="el">
     <FormInput
       type="number"
@@ -17,10 +17,7 @@
       auto-close-success
     >
       <template #start="{ start }">
-        <Button @click="start" class="bid">
-          Bid
-          (${{ dollarPrice }})
-        </Button>
+        <Button @click="start" class="bid"> Bid (${{ dollarPrice }}) </Button>
       </template>
     </TransactionFlow>
   </FormGroup>

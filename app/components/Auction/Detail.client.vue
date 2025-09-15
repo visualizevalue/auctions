@@ -27,14 +27,21 @@
         currentBlock,
         countDownStr,
         blocksRemaining,
-        transactionFlowConfig
+        transactionFlowConfig,
       }"
     >
       <section class="details">
         <header class="title">
-          <h1>{{ token.name }} <small>#{{ token.tokenId }}</small></h1>
+          <h1>
+            {{ token.name }} <small>#{{ token.tokenId }}</small>
+          </h1>
           <p v-if="token.description">
-            <ExpandableText :text="token.description" :length="95" :expand-text="$t('read_more')" :collapse-text="$t('collapse')" />
+            <ExpandableText
+              :text="token.description"
+              :length="95"
+              :expand-text="$t('read_more')"
+              :collapse-text="$t('collapse')"
+            />
           </p>
           <!-- <p>Token Standard: ERC-{{ collection.tokenStandard }}</p> -->
           <!-- <p v-if="collection" class="artist"> -->
@@ -68,7 +75,11 @@
           <template v-else-if="currentBlock">
             <p>
               <span>
-                {{ $t('auction.closed_on', { date: formatDateTime(isoDateFromSeconds (auction.endTimestamp)) })}}
+                {{
+                  $t('auction.closed_on', {
+                    date: formatDateTime(isoDateFromSeconds(auction.endTimestamp)),
+                  })
+                }}
               </span>
               <span> · </span>
               <span>Auction won by <Account :address="auction.latestBidder" /></span>
@@ -97,136 +108,137 @@ const value = ref('0.1')
 </script>
 
 <style scoped>
-  .auction-detail {
-    position: relative;
-    container-type: inline-size;
+.auction-detail {
+  position: relative;
+  container-type: inline-size;
 
-    display: grid;
-    grid-auto-rows: min-content;
-    padding: 0 !important;
-    /* border-top: var(--border); */
+  display: grid;
+  grid-auto-rows: min-content;
+  padding: 0 !important;
+  /* border-top: var(--border); */
 
-    @media (--md) {
-      height: calc(100dvh - var(--navbar-height));
-      grid-template-columns: 50% 1fr;
-      grid-auto-rows: auto;
-    }
-
-    @media (--lg) {
-      grid-template-columns: 60% 1fr;
-    }
+  @media (--md) {
+    height: calc(100dvh - var(--navbar-height));
+    grid-template-columns: 50% 1fr;
+    grid-auto-rows: auto;
   }
 
-  .artifact {
-    --padding-x: 0;
-    --padding-top: 0;
-    --padding-bottom: 0;
-    --width: 100cqw;
-    --height: 100%;
-    --dimension: min(100cqw, 100cqh);
+  @media (--lg) {
+    grid-template-columns: 60% 1fr;
+  }
+}
 
-    @media (--md) {
-      --width: 50cqw;
-      --height: calc(100cqh - var(--navbar-height));
-      --height: 100cqh;
-      --padding-top: var(--spacer-lg);
-      --padding-x: var(--spacer-lg);
-      --padding-bottom: calc(var(--spacer-lg) + var(--spacer));
-      --padding-bottom: var(--spacer-lg);
+.artifact {
+  --padding-x: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --width: 100cqw;
+  --height: 100%;
+  --dimension: min(100cqw, 100cqh);
 
-      --dimension: min(
-        calc(var(--width) - var(--padding-x)*2),
-        calc(100cqh - var(--padding-top) - var(--padding-bottom))
-      );
-    }
+  @media (--md) {
+    --width: 50cqw;
+    --height: calc(100cqh - var(--navbar-height));
+    --height: 100cqh;
+    --padding-top: var(--spacer-lg);
+    --padding-x: var(--spacer-lg);
+    --padding-bottom: calc(var(--spacer-lg) + var(--spacer));
+    --padding-bottom: var(--spacer-lg);
 
-    @media (--lg) {
-      --width: 60cqw;
-      --padding-top: var(--spacer-xl);
-      --padding-x: var(--spacer-xl);
-      --padding-bottom: calc(var(--spacer-xl) + var(--spacer));
-    }
-
-    height: var(--height);
-    width: var(--width);
-    padding: var(--padding-top) var(--padding-x) var(--padding-bottom);
-    position: relative;
-
-    @media (--md) {
-      border-right: var(--border);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    > *:not(menu) {
-      width: var(--dimension);
-      height: auto;
-      border-bottom: var(--border) !important;
-      transition: transform var(--speed-slow), box-shadow var(--speed-slow);
-
-      @media (--md) {
-        border-bottom: none !important;
-      }
-    }
-
-    > menu {
-      position: absolute;
-      bottom: var(--spacer);
-      right: var(--spacer);
-      width: fit-content;
-      padding: 0;
-    }
+    --dimension: min(
+      calc(var(--width) - var(--padding-x) * 2),
+      calc(100cqh - var(--padding-top) - var(--padding-bottom))
+    );
   }
 
-  .details {
-
-    @media (--md) {
-      overflow-y: auto;
-      -webkit-overflow-scrolling: auto;
-    }
-
-    > * {
-      &:not(:last-child) {
-        border-bottom: var(--border);
-      }
-      padding: var(--spacer);
-
-      @media (--md) {
-        padding: var(--spacer) var(--spacer-lg);
-      }
-    }
-
-    header {
-      z-index: 100;
-      display: grid;
-      gap: var(--spacer-sm);
-      background: var(--card-background);
-      backdrop-filter: var(--blur);
-
-      h1 {
-        font-size: var(--font-lg);
-
-        small {
-          color: var(--muted);
-        }
-      }
-
-      @media (--md) {
-        padding: var(--spacer-lg);
-        position: sticky;
-        top: 0;
-      }
-    }
+  @media (--lg) {
+    --width: 60cqw;
+    --padding-top: var(--spacer-xl);
+    --padding-x: var(--spacer-xl);
+    --padding-bottom: calc(var(--spacer-xl) + var(--spacer));
   }
 
-  .auction-status {
+  height: var(--height);
+  width: var(--width);
+  padding: var(--padding-top) var(--padding-x) var(--padding-bottom);
+  position: relative;
+
+  @media (--md) {
+    border-right: var(--border);
     display: flex;
-    gap: var(--spacer);
-    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  > *:not(menu) {
+    width: var(--dimension);
+    height: auto;
+    border-bottom: var(--border) !important;
+    transition:
+      transform var(--speed-slow),
+      box-shadow var(--speed-slow);
 
     @media (--md) {
-      justify-content: space-between;
+      border-bottom: none !important;
     }
   }
+
+  > menu {
+    position: absolute;
+    bottom: var(--spacer);
+    right: var(--spacer);
+    width: fit-content;
+    padding: 0;
+  }
+}
+
+.details {
+  @media (--md) {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: auto;
+  }
+
+  > * {
+    &:not(:last-child) {
+      border-bottom: var(--border);
+    }
+    padding: var(--spacer);
+
+    @media (--md) {
+      padding: var(--spacer) var(--spacer-lg);
+    }
+  }
+
+  header {
+    z-index: 100;
+    display: grid;
+    gap: var(--spacer-sm);
+    background: var(--card-background);
+    backdrop-filter: var(--blur);
+
+    h1 {
+      font-size: var(--font-lg);
+
+      small {
+        color: var(--muted);
+      }
+    }
+
+    @media (--md) {
+      padding: var(--spacer-lg);
+      position: sticky;
+      top: 0;
+    }
+  }
+}
+
+.auction-status {
+  display: flex;
+  gap: var(--spacer);
+  flex-wrap: wrap;
+
+  @media (--md) {
+    justify-content: space-between;
+  }
+}
 </style>

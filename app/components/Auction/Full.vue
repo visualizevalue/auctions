@@ -40,7 +40,7 @@ article {
   background: var(--background);
 
   > .frame {
-    width: calc(min(100vw, 100dvh) - var(--spacer)*2);
+    width: calc(min(100vw, 100dvh) - var(--spacer) * 2);
   }
 
   > .button {

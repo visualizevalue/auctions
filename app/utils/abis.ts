@@ -27,7 +27,7 @@ export const AUCTIONS_ABI = parseAbi([
   'function onERC721Received(address, address from, uint256 tokenId, bytes data) returns (bytes4)',
   'function settle(uint256 id)',
   'function supportsInterface(bytes4 interfaceId) view returns (bool)',
-  'function withdraw()'
+  'function withdraw()',
 ])
 
 export const ERC721_ABI = parseAbi([
@@ -54,7 +54,7 @@ export const ERC721_ABI = parseAbi([
   'function supportsInterface(bytes4 interfaceId) view returns (bool)',
   'function symbol() view returns (string)',
   'function tokenURI(uint256 tokenId) view returns (string)',
-  'function transferFrom(address from, address to, uint256 tokenId)'
+  'function transferFrom(address from, address to, uint256 tokenId)',
 ])
 
 export const ERC1155_ABI = parseAbi([
@@ -76,6 +76,5 @@ export const ERC1155_ABI = parseAbi([
   'function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes data)',
   'function setApprovalForAll(address operator, bool approved)',
   'function supportsInterface(bytes4 interfaceId) view returns (bool)',
-  'function uri(uint256) view returns (string)'
+  'function uri(uint256) view returns (string)',
 ])
-

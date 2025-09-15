@@ -14,7 +14,6 @@ export const useOnchainStore = () => {
   const auctionsAddress = config.public.auctionsAddress
 
   return defineStore('onchainStore', {
-
     state: () => ({
       version: CURRENT_STATE_VERSION,
       users: {} as { [key: `0x${string}`]: User },
@@ -23,16 +22,16 @@ export const useOnchainStore = () => {
     }),
 
     getters: {
-      all (state) {
+      all(state) {
         return Object.values(state.auctions)
       },
-      user (state) {
+      user(state) {
         return (address: `0x${string}`) => state.artists[address]
       },
-      ens () {
+      ens() {
         return (address: `0x${string}`) => this.user(address)?.ens
       },
-      displayName () {
+      displayName() {
         return (address: `0x${string}`) => this.ens(address) || shortAddress(address)
       },
       hasAuction: (state) => (id: bigint) => state.auctions[id] !== undefined,
@@ -40,14 +39,14 @@ export const useOnchainStore = () => {
     },
 
     actions: {
-      ensureStoreVersion () {
+      ensureStoreVersion() {
         if (this.version < CURRENT_STATE_VERSION) {
           console.info(`Reset store`)
           this.$reset()
         }
       },
 
-      async fetchLatestAuction (): Promise<void> {
+      async fetchLatestAuction(): Promise<void> {
         this.latestAuction = await readContract($wagmi, {
           abi: AUCTIONS_ABI,
           address: auctionsAddress,
@@ -56,11 +55,11 @@ export const useOnchainStore = () => {
         })
       },
 
-      async getAuction (id: bigint): Promise<Auction> {
+      async getAuction(id: bigint): Promise<Auction> {
         this.ensureStoreVersion()
 
         const auction = this.auctions[id]
-        if (! auction) return this.fetchAuction(id)
+        if (!auction) return this.fetchAuction(id)
 
         console.info(`Updating auction #${id}`)
 
@@ -84,40 +83,47 @@ export const useOnchainStore = () => {
         })
 
         const currentBlock = Number(await client.getBlockNumber())
-        const deltaToEnd = parseInt((auction.endTimestamp - nowInSeconds()) / Number(BLOCK_TIME))
+        const deltaToEnd = parseInt(
+          (auction.endTimestamp - nowInSeconds()) / Number(BLOCK_TIME)
+        )
         auction.untilBlockEstimate = currentBlock + deltaToEnd
-        auction.createdBlockEstimate = auction.untilBlockEstimate - Number(BLOCKS_PER_DAY) - 600
+        auction.createdBlockEstimate =
+          auction.untilBlockEstimate - Number(BLOCKS_PER_DAY) - 600
 
         auction.endTimestamp = endTimestamp
         auction.settled = settled
         auction.latestBid = latestBid
         auction.latestBidder = latestBidder
 
-        if (settled && ! auction.settleEvent) {
+        if (settled && !auction.settleEvent) {
           const [settledLog] = await client.getLogs({
             address: auctionsAddress,
-            event: parseAbiItem('event AuctionSettled(uint256 indexed auctionId, address indexed winner, address indexed beneficiary, uint256 amount)'),
+            event: parseAbiItem(
+              'event AuctionSettled(uint256 indexed auctionId, address indexed winner, address indexed beneficiary, uint256 amount)'
+            ),
             args: {
               auctionId: BigInt(auction.id),
             },
             fromBlock: BigInt(auction.untilBlockEstimate - 600),
-            toBlock: 'latest'
+            toBlock: 'latest',
           })
 
-          const tx = await client.getTransaction({ hash: settledLog.transactionHash })
+          const tx = await client.getTransaction({
+            hash: settledLog.transactionHash,
+          })
 
           auction.settleEvent = {
             block: settledLog.blockNumber,
             logIndex: settledLog.logIndex,
             tx: settledLog.transactionHash,
-            from: tx.from
+            from: tx.from,
           }
         }
 
         return auction
       },
 
-      async fetchAuction (id: bigint): Promise<Auction> {
+      async fetchAuction(id: bigint): Promise<Auction> {
         const [
           tokenContract,
           tokenId,
@@ -146,21 +152,31 @@ export const useOnchainStore = () => {
           tokenStandard: tokenERCStandard,
         }
 
-        const metadata = tokenERCStandard === 721
-          ? await getERC721Metadata(client, tokenContract, tokenId)
-          : await getERC1155Metadata(client, tokenContract, tokenId)
+        const metadata =
+          tokenERCStandard === 721
+            ? await getERC721Metadata(client, tokenContract, tokenId)
+            : await getERC1155Metadata(client, tokenContract, tokenId)
 
         const token: Token = {
           tokenId,
           name: metadata.name || '',
           description: metadata.description || '',
-          image: await resolveURI(metadata.image, { ipfs: config.public.ipfsGateway, ar: config.public.arweaveGateway }) || '',
-          animationUrl: await resolveURI(metadata.animation_url, { ipfs: config.public.ipfsGateway, ar: config.public.arweaveGateway }),
+          image:
+            (await resolveURI(metadata.image, {
+              ipfs: config.public.ipfsGateway,
+              ar: config.public.arweaveGateway,
+            })) || '',
+          animationUrl: await resolveURI(metadata.animation_url, {
+            ipfs: config.public.ipfsGateway,
+            ar: config.public.arweaveGateway,
+          }),
         }
 
         const [initLog] = await client.getLogs({
           address: auctionsAddress,
-          event: parseAbiItem('event AuctionInitialised(uint256 indexed auctionId, address indexed tokenContract, uint256 indexed tokenId, uint16 tokenERCStandard, uint40 endTimestamp, address beneficiary)'),
+          event: parseAbiItem(
+            'event AuctionInitialised(uint256 indexed auctionId, address indexed tokenContract, uint256 indexed tokenId, uint16 tokenERCStandard, uint40 endTimestamp, address beneficiary)'
+          ),
           args: {
             auctionId: BigInt(id),
           },
@@ -186,7 +202,7 @@ export const useOnchainStore = () => {
             block: initLog.blockNumber,
             logIndex: initLog.logIndex,
             tx: initLog.transactionHash,
-          }
+          },
         }
 
         this.auctions[id] = auction
@@ -194,9 +210,9 @@ export const useOnchainStore = () => {
         return auction
       },
 
-      async fetchMinimumBid (id: bigint) {
+      async fetchMinimumBid(id: bigint) {
         const auction = this.auctions[id]
-        if (! auction) await fetchAuction(id)
+        if (!auction) await fetchAuction(id)
 
         auction.currentBidPrice = await readContract($wagmi, {
           abi: AUCTIONS_ABI,
@@ -209,8 +225,8 @@ export const useOnchainStore = () => {
         return auction
       },
 
-      async fetchAuctionBids (id: bigint) {
-        const auction = this.auctions[id]
+      async fetchAuctionBids(id: bigint) {
+        const auction = this.auctions[id.toString()]
         const client = getPublicClient($wagmi, { chainId }) as PublicClient
         const currentBlock = Number(await client.getBlockNumber())
 
@@ -227,11 +243,12 @@ export const useOnchainStore = () => {
         // Initially, we want to sync backwards,
         // but at most 5000 blocks (the general max range for an event query)
         const maxRangeBlock = toBlock - Number(MAX_BLOCK_RANGE)
-        const fromBlock = auction.bidsFetchedUntilBlock > maxRangeBlock // If we've already fetched
-          ? auction.bidsFetchedUntilBlock + 1 // we want to continue where we left off
-          : maxRangeBlock > createdBlockEstimate // Otherwise we'll go back as far as possible
-            ? maxRangeBlock // (to our max range)
-            : createdBlockEstimate // (or all the way to when the auction was created)
+        const fromBlock =
+          auction.bidsFetchedUntilBlock > maxRangeBlock // If we've already fetched
+            ? auction.bidsFetchedUntilBlock + 1 // we want to continue where we left off
+            : maxRangeBlock > createdBlockEstimate // Otherwise we'll go back as far as possible
+              ? maxRangeBlock // (to our max range)
+              : createdBlockEstimate // (or all the way to when the auction was created)
 
         // Load bids in range
         const newBids = await this.loadBidEvents(auction, fromBlock, toBlock)
@@ -241,20 +258,17 @@ export const useOnchainStore = () => {
         auction.bidsFetchedUntilBlock = toBlock
 
         // If this is our first fetch, mark until when we have backfilled
-        if (! auction.bidsBackfilledUntilBlock) {
+        if (!auction.bidsBackfilledUntilBlock) {
           auction.bidsBackfilledUntilBlock = fromBlock
         }
 
         // Update minimum bid
         if (newBids.length) {
-          await Promise.all([
-            this.getAuction(id),
-            this.fetchMinimumBid(id),
-          ])
+          await Promise.all([this.getAuction(id), this.fetchMinimumBid(id)])
         }
       },
 
-      async backfillAuctionBids (id: bigint) {
+      async backfillAuctionBids(id: bigint) {
         const auction = this.auctions[id]
 
         // If we've backfilled all the way;
@@ -264,22 +278,33 @@ export const useOnchainStore = () => {
         const toBlock = auction.bidsBackfilledUntilBlock - 1
 
         // We want to fetch until our max range (5000), or until when the auction was created
-        const fromBlock = toBlock - Number(MAX_BLOCK_RANGE) > auction.createdBlockEstimate
-          ? toBlock - Number(MAX_BLOCK_RANGE)
-          : auction.createdBlockEstimate
+        const fromBlock =
+          toBlock - Number(MAX_BLOCK_RANGE) > auction.createdBlockEstimate
+            ? toBlock - Number(MAX_BLOCK_RANGE)
+            : auction.createdBlockEstimate
         console.info(`Backfilling auction bid blocks ${fromBlock}-${toBlock}`)
 
         // Finally, we update our database
-        this.addAuctionBids(auction, await this.loadBidEvents(auction, fromBlock, toBlock), 'append')
+        this.addAuctionBids(
+          auction,
+          await this.loadBidEvents(auction, fromBlock, toBlock),
+          'append'
+        )
 
         // And save until when we have backfilled our tokens.
         auction.bidsBackfilledUntilBlock = fromBlock
       },
 
-      async loadBidEvents (auction: Auction, fromBlock: number, toBlock: number): Promise<BidEvent[]> {
+      async loadBidEvents(
+        auction: Auction,
+        fromBlock: number,
+        toBlock: number
+      ): Promise<BidEvent[]> {
         const logs = await client.getLogs({
           address: auctionsAddress,
-          event: parseAbiItem('event Bid(uint256 indexed auctionId, uint256 indexed bid, address indexed from)'),
+          event: parseAbiItem(
+            'event Bid(uint256 indexed auctionId, uint256 indexed bid, address indexed from)'
+          ),
           args: {
             auctionId: BigInt(auction.id),
           },
@@ -289,24 +314,32 @@ export const useOnchainStore = () => {
 
         console.info(`Bids fetched from ${fromBlock}-${toBlock}`)
 
-        return logs.map(l => ({
-          auctionId: auction.id,
-          address: l.args.from,
-          block: l.blockNumber,
-          logIndex: l.logIndex,
-          tx: l.transactionHash,
-          value: l.args.bid
-        }) as BidEvent).reverse()
+        return logs
+          .map(
+            (l) =>
+              ({
+                auctionId: auction.id,
+                address: l.args.from,
+                block: l.blockNumber,
+                logIndex: l.logIndex,
+                tx: l.transactionHash,
+                value: l.args.bid,
+              }) as BidEvent
+          )
+          .reverse()
       },
 
-      async addAuctionBids (auction: Auction, bids: BidEvent[], location: 'prepend'|'append' = 'prepend') {
+      async addAuctionBids(
+        auction: Auction,
+        bids: BidEvent[],
+        location: 'prepend' | 'append' = 'prepend'
+      ) {
         console.log('adding bids', bids)
-        auction.bids = location === 'prepend'
-          ? [ ...bids, ...auction.bids ]
-          : [ ...auction.bids, ...bids ]
+        auction.bids =
+          location === 'prepend' ? [...bids, ...auction.bids] : [...auction.bids, ...bids]
       },
 
-      initializeUser (address: `0x${string}`) {
+      initializeUser(address: `0x${string}`) {
         const user: User = {
           address,
           ens: '',
@@ -320,14 +353,14 @@ export const useOnchainStore = () => {
         return user
       },
 
-      async fetchUserProfile (address: `0x${string}`): Promise<Artist> {
+      async fetchUserProfile(address: `0x${string}`): Promise<Artist> {
         const client = getPublicClient($wagmi, { chainId: 1 }) as PublicClient
         const block = await client.getBlockNumber()
 
         // Only update once per hour
         if (
           this.user(address)?.profileUpdatedAtBlock > 0n &&
-          (block - this.user(address).profileUpdatedAtBlock) < BLOCKS_PER_CACHE
+          block - this.user(address).profileUpdatedAtBlock < BLOCKS_PER_CACHE
         ) {
           console.info(`User profile already fetched...`)
           return this.user(address)
@@ -335,14 +368,13 @@ export const useOnchainStore = () => {
 
         console.info(`Updating user profile...`)
 
-        let ens, avatar, description,
-          url, email, twitter, github
+        let ens, avatar, description, url, email, twitter, github
 
         try {
           ens = await client.getEnsName({ address })
 
           if (ens) {
-            [avatar, description, url, email, twitter, github] = await Promise.all([
+            ;[avatar, description, url, email, twitter, github] = await Promise.all([
               client.getEnsAvatar({ name: ens }),
               client.getEnsText({ name: ens, key: 'description' }),
               client.getEnsText({ name: ens, key: 'url' }),
@@ -351,7 +383,7 @@ export const useOnchainStore = () => {
               client.getEnsText({ name: ens, key: 'com.github' }),
             ])
           }
-        } catch (e) { }
+        } catch (e) {}
 
         this.users[address].ens = ens
         this.users[address].avatar = avatar
@@ -373,6 +405,5 @@ export const useOnchainStore = () => {
         deserialize: parseJSON,
       },
     },
-
   })()
 }

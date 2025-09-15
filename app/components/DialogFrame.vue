@@ -41,7 +41,7 @@ defineExpose({
 <style>
 dialog {
   position: fixed;
-  padding: calc(var(--spacer)*2);
+  padding: calc(var(--spacer) * 2);
   max-width: var(--dialog-width);
   width: 100%;
   background: var(--background);

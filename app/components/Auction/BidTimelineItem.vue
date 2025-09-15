@@ -31,55 +31,55 @@ const formattedPrice = computed(() => props.bid && customFormatEther(props.bid.v
 </script>
 
 <style>
-  .auction-bid-timeline-item {
-    display: grid;
-    gap: 0 var(--spacer-sm);
-    grid-template-columns: 1fr 1fr;
-    padding: var(--size-2) 0;
+.auction-bid-timeline-item {
+  display: grid;
+  gap: 0 var(--spacer-sm);
+  grid-template-columns: 1fr 1fr;
+  padding: var(--size-2) 0;
+
+  .account {
+    grid-column: span 2;
+  }
+
+  .price,
+  .links {
+    text-align: right;
+  }
+
+  span {
+    white-space: nowrap;
+
+    &:not(.account):not(.account *) {
+      color: var(--muted);
+      font-size: var(--font-sm);
+    }
+  }
+
+  a,
+  button {
+    color: var(--color);
+
+    &:--highlight {
+      color: var(--color);
+    }
+  }
+
+  @container (min-width: 24rem) {
+    grid-template-columns: max(6rem, 40%) 1fr 1fr 2rem;
+    gap: var(--spacer);
 
     .account {
-      grid-column: span 2;
+      grid-column: 1;
     }
 
-    .price,
-    .links {
+    .time-ago,
+    .amount {
       text-align: right;
     }
 
-    span {
-      white-space: nowrap;
-
-      &:not(.account):not(.account *) {
-        color: var(--muted);
-        font-size: var(--font-sm);
-      }
-    }
-
-    a,
-    button {
-      color: var(--color);
-
-      &:--highlight {
-        color: var(--color);
-      }
-    }
-
-    @container (min-width: 24rem) {
-      grid-template-columns: max(6rem, 40%) 1fr 1fr 2rem;
-      gap: var(--spacer);
-
-      .account {
-        grid-column: 1;
-      }
-
-      .time-ago,
-      .amount {
-        text-align: right;
-      }
-
-      span:not(.account) {
-        font-size: var(--font-base);
-      }
+    span:not(.account) {
+      font-size: var(--font-base);
     }
   }
+}
 </style>

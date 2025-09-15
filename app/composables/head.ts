@@ -1,9 +1,9 @@
 type HeadConfig = {
-  title: string;
-  description?: string;
-  og?: string;
-  append?: string;
-  meta?: { name: string, content: string }[];
+  title: string
+  description?: string
+  og?: string
+  append?: string
+  meta?: { name: string; content: string }[]
 }
 
 const makeHead = ({
@@ -22,7 +22,7 @@ const makeHead = ({
       { property: 'og:description', content: description },
       { property: 'og:image', content: og },
       ...meta,
-    ]
+    ],
   }
 }
 

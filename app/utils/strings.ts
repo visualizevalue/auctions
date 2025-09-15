@@ -4,7 +4,12 @@ export const pluralize = (word: string, count: number): string => {
   // Basic rules for pluralization
   if (word.endsWith('y')) {
     return word.slice(0, -1) + 'ies'
-  } else if (word.endsWith('s') || word.endsWith('ch') || word.endsWith('sh') || word.endsWith('x')) {
+  } else if (
+    word.endsWith('s') ||
+    word.endsWith('ch') ||
+    word.endsWith('sh') ||
+    word.endsWith('x')
+  ) {
     return word + 'es'
   } else {
     return word + 's'
@@ -18,10 +23,13 @@ export const shortenedCleanText = (str: string, length: number = 80) => {
 
   const nextSpaceIndex = txt.indexOf(' ', length)
 
-  return txt.length > length && nextSpaceIndex > 0 ? txt.substring(0, nextSpaceIndex) + '...' : txt
+  return txt.length > length && nextSpaceIndex > 0
+    ? txt.substring(0, nextSpaceIndex) + '...'
+    : txt
 }
 
-const urlPattern = /\b((http|https):\/\/)?(www\.)?([a-zA-Z0-9\-\.]+)\.([a-zA-Z]{2,})(\/[^\s]*)?\b/g
+const urlPattern =
+  /\b((http|https):\/\/)?(www\.)?([a-zA-Z0-9\-\.]+)\.([a-zA-Z]{2,})(\/[^\s]*)?\b/g
 export const extractURLs = (str: string) => {
   return {
     text: str.replace(urlPattern, ''),

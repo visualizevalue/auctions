@@ -4,7 +4,8 @@
     class="gas link"
     ref="trigger"
     @mouseenter="() => popover.showPopover()"
-  ><slot name="trigger" /></Button>
+    ><slot name="trigger"
+  /></Button>
 
   <Teleport to="body">
     <div
@@ -23,9 +24,7 @@
 <script setup lang="ts">
 import { useElementBounding, useElementSize, useWindowSize } from '@vueuse/core'
 
-const {
-  id,
-} = defineProps({
+const { id } = defineProps({
   id: String,
 })
 
@@ -33,11 +32,18 @@ const trigger = ref()
 const popover = ref()
 
 const { width: windowWidth } = useWindowSize()
-const { width: dialogWidth } = useElementSize(popover, undefined, { box: 'border-box' })
-const { x: targetX, y: targetY, width: targetWidth, height: targetHeight } = useElementBounding(trigger)
+const { width: dialogWidth } = useElementSize(popover, undefined, {
+  box: 'border-box',
+})
+const {
+  x: targetX,
+  y: targetY,
+  width: targetWidth,
+  height: targetHeight,
+} = useElementBounding(trigger)
 const targetCenterX = computed(() => targetX.value + targetWidth.value / 2)
 const adjustmentX = computed(() => {
-  const popoverLeft = targetCenterX.value - (dialogWidth.value / 2)
+  const popoverLeft = targetCenterX.value - dialogWidth.value / 2
   const overflow = parseInt(`${windowWidth.value - (popoverLeft + dialogWidth.value) - 29}`)
   return overflow < 0 ? overflow : 0
 })
@@ -51,20 +57,22 @@ const popoverPosition = computed(() => {
 
 const popoverArrowPosition = computed(() => {
   return {
-    left: dialogWidth.value/2 - adjustmentX.value + 'px',
+    left: dialogWidth.value / 2 - adjustmentX.value + 'px',
   }
 })
 </script>
 
 <style scoped>
 [popover] {
-  --width: min(100vw - var(--spacer)*2, var(--dialog-width));
+  --width: min(100vw - var(--spacer) * 2, var(--dialog-width));
 
   position: fixed;
   overflow: visible;
   width: var(--width);
   margin: 0;
-  transition: transform var(--speed), opacity var(--speed);
+  transition:
+    transform var(--speed),
+    opacity var(--speed);
   margin-left: calc(-0.5 * var(--width));
 
   background: var(--background);

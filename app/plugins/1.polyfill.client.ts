@@ -5,8 +5,8 @@ import { Buffer } from 'buffer/'
 export default defineNuxtPlugin({
   name: 'client-polyfill',
   enforce: 'pre',
-  async setup () {
+  async setup() {
     window.global = window
     window.Buffer = Buffer
-  }
+  },
 })

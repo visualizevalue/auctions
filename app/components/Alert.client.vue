@@ -1,6 +1,6 @@
 <template>
   <Transition name="fade">
-    <aside v-if="! dismissed" class="alert" :class="[type]">
+    <aside v-if="!dismissed" class="alert" :class="[type]">
       <button v-if="dismissable" @click="dismiss" class="close">
         <Icon type="close" />
       </button>
@@ -19,13 +19,13 @@ const props = defineProps({
   },
   dismiss: {
     type: String,
-  }
+  },
 })
 
 const dismissKey = computed(() => `alert:${props.dismiss}`)
 
 const dismissed = useLocalStorage(dismissKey.value, false)
-const dismissable = computed(() => !! props.dismiss)
+const dismissable = computed(() => !!props.dismiss)
 
 const dismiss = () => {
   dismissed.value = true
@@ -68,4 +68,3 @@ const dismiss = () => {
   }
 }
 </style>
-

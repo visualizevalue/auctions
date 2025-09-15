@@ -5,13 +5,13 @@ import type { RouteLocationRaw } from 'vue-router'
 // =====================================================================
 export interface User {
   address: `0x${string}`
-  ens?: string|null
-  avatar?: string|null
-  description?: string|null
-  url?: string|null
-  email?: string|null
-  twitter?: string|null
-  github?: string|null
+  ens?: string | null
+  avatar?: string | null
+  description?: string | null
+  url?: string | null
+  email?: string | null
+  twitter?: string | null
+  github?: string | null
   profileUpdatedAtBlock: bigint
 }
 
@@ -37,7 +37,7 @@ export interface Auction {
 
 export interface Collection {
   address: `0x${string}`
-  tokenStandard: 721|1155
+  tokenStandard: 721 | 1155
   owner?: `0x${string}`
   image?: string
   name?: string
@@ -76,4 +76,3 @@ export interface SettleEvent {
   timestamp?: bigint
   from: `0x${string}`
 }
-

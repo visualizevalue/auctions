@@ -1,12 +1,12 @@
 :root {
   /* GRAYS */
-  --white:    white;
-  --gray:     gray;
-  --black:    black;
+  --white: white;
+  --gray: gray;
+  --black: black;
 
   /* COLORS */
-  --primary:   blue;
-  --error:     red;
+  --primary: blue;
+  --error: red;
 
   /*
   * Z-COLORS
@@ -14,7 +14,6 @@
   * We're not thinking about color per se, but about the viewers perspective.
   */
   --background: var(--white);
-  --muted:      var(--gray);
-  --color:      var(--black);
+  --muted: var(--gray);
+  --color: var(--black);
 }
-

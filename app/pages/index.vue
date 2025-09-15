@@ -2,14 +2,15 @@
   <PageFrame>
     <p>{{ config.public.description }}</p>
 
-    <Auctions v-slot="{
-      displayPrice,
-      dollarPrice,
-      currentBlock,
-      latestAuctionId,
-      mainAuctionId
-    }">
-      <Connect @connected="$event => navigateTo({ name: 'id', params: { id: mainAuctionId } }, { replace: true })">
+    <Auctions
+      v-slot="{ displayPrice, dollarPrice, currentBlock, latestAuctionId, mainAuctionId }"
+    >
+      <Connect
+        @connected="
+          ($event) =>
+            navigateTo({ name: 'id', params: { id: mainAuctionId } }, { replace: true })
+        "
+      >
         <template #connected>
           <!-- <pre> -->
           <!--   {{ displayPrice.value }} {{ displayPrice.format }} -->

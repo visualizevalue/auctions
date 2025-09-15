@@ -8,4 +8,3 @@
 <script setup>
 defineProps(['profile'])
 </script>
-

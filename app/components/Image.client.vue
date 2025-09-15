@@ -6,14 +6,8 @@
     :style="{ padding: `0 0 ${height}` }"
     v-intersection-observer="loadImage"
   >
-    <Loading v-if="! loaded" txt=""/>
-    <img
-      v-if="uri"
-      ref="imageEl"
-      :alt="alt"
-      :src="uri"
-      @load="imageLoaded"
-    >
+    <Loading v-if="!loaded" txt="" />
+    <img v-if="uri" ref="imageEl" :alt="alt" :src="uri" @load="imageLoaded" />
   </article>
 </template>
 
@@ -32,23 +26,25 @@ const loaded = ref(false)
 const imageEl = ref(null)
 const aspectRatio = ref(1)
 const computeAspectRatio = () => {
-  aspectRatio.value = (
+  aspectRatio.value =
     props.aspectRatio || // The passed aspect ratio
-    (imageEl.value?.naturalWidth / (imageEl.value?.naturalHeight || 1)) || // The natural image element ratio
+    imageEl.value?.naturalWidth / (imageEl.value?.naturalHeight || 1) || // The natural image element ratio
     1 // The default square ratio
-  )
 }
 computeAspectRatio()
 const height = computed(() => (1 / aspectRatio.value) * 100 + '%')
 
 const loadImage = ([{ isIntersecting }]) => {
-  if (! isIntersecting) return
+  if (!isIntersecting) return
 
-  if (! props.src) return
+  if (!props.src) return
 
   uri.value = props.src
 }
-watch(() => props.src, () => loadImage([{ isIntersecting: true }]))
+watch(
+  () => props.src,
+  () => loadImage([{ isIntersecting: true }])
+)
 
 // Image loaded event
 const imageLoaded = () => {

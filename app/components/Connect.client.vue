@@ -7,11 +7,7 @@
   </slot>
 
   <Teleport to="body">
-    <Modal
-      v-if="showConnect"
-      :open="chooseModalOpen"
-      @close="closeModal"
-    >
+    <Modal v-if="showConnect" :open="chooseModalOpen" @close="closeModal">
       <div class="wallet-options">
         <Button
           v-for="connector in shownConnectors"
@@ -22,7 +18,7 @@
             v-if="ICONS[connector.name]"
             :src="connector.icon || `${base}icons/wallets/${ICONS[connector.name]}`"
             :alt="connector.name"
-          >
+          />
           {{ connector.name }}
         </Button>
       </div>
@@ -35,9 +31,9 @@ import { useAccount, useConnect, useChainId } from '@wagmi/vue'
 
 const ICONS = {
   'Coinbase Wallet': 'coinbase.svg',
-  'MetaMask': 'metamask.svg',
-  'WalletConnect': 'walletconnect.svg',
-  'Rainbow': 'rainbow.svg',
+  MetaMask: 'metamask.svg',
+  WalletConnect: 'walletconnect.svg',
+  Rainbow: 'rainbow.svg',
 }
 
 const props = defineProps(['class'])
@@ -51,14 +47,10 @@ const { address, isConnected } = useAccount()
 const showConnect = computed(() => !isConnected.value)
 const shownConnectors = computed(() => {
   const unique = Array.from(
-    new Map(
-      connectors.map(connector => [connector.name, connector])
-    ).values()
+    new Map(connectors.map((connector) => [connector.name, connector])).values()
   )
 
-  return unique.length > 1
-    ? unique.filter(c => c.id !== 'injected')
-    : unique
+  return unique.length > 1 ? unique.filter((c) => c.id !== 'injected') : unique
 })
 
 const chooseModalOpen = ref(false)
@@ -73,7 +65,8 @@ const login = async (connector) => {
   }, 100)
 }
 
-const check = () => isConnected.value ? emit('connected', { address: address.value }) : emit('disconnected')
+const check = () =>
+  isConnected.value ? emit('connected', { address: address.value }) : emit('disconnected')
 watch(isConnected, () => check())
 onMounted(() => check())
 </script>

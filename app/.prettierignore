@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+tries/
+
+# build outputs
+dist/
+build/
+*.min.js
+*.min.css
+
+# generated files
+*.generated.*
+
+# package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# git
+.git/
+
+# other
+*.log
+.ds_store
+coverage/
+.cache/
+

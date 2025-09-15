@@ -1,5 +1,4 @@
 :root {
-
   --rem: 16px;
   --font-base: var(--rem);
   --font-sm: calc(var(--font-base) * 0.8);
@@ -15,11 +14,9 @@
   --letter-spacing-lg: 0.1em;
 
   --line-height-sm: 105%;
-  --line-height:    100%;
+  --line-height: 100%;
   --line-height-md: 120%;
   --line-height-lg: 160%;
 
   --text-transform: none;
-
 }
-

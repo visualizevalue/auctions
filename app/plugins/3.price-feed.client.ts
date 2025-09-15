@@ -6,4 +6,3 @@ export default defineNuxtPlugin((_) => {
 
   setInterval(() => priceFeed.fetchEthUsdPrice(), 60 * 60 * 1000) // once per hour
 })
-

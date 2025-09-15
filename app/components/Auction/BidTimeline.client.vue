@@ -7,14 +7,17 @@
         <AuctionBidTimelineItem v-if="auction.settleEvent">
           <Account :address="auction.settleEvent.from" />
 
-          <span class="price">
-            Settled Auction
-          </span>
+          <span class="price"> Settled Auction </span>
 
-          <span class="time-ago"><BlocksTimeAgo :blocks="currentBlock - auction.settleEvent.block" /></span>
+          <span class="time-ago"
+            ><BlocksTimeAgo :blocks="currentBlock - auction.settleEvent.block"
+          /></span>
 
           <span class="links">
-            <NuxtLink :to="`${config.public.blockExplorer}/tx/${auction.settleEvent.tx}`" target="_blank">
+            <NuxtLink
+              :to="`${config.public.blockExplorer}/tx/${auction.settleEvent.tx}`"
+              target="_blank"
+            >
               <Icon type="link" />
             </NuxtLink>
           </span>
@@ -30,25 +33,28 @@
         <AuctionBidTimelineItem v-if="auction.initEvent">
           <Account :address="auction.beneficiary" />
 
-          <span class="price">
-            Initialized Auction
-          </span>
+          <span class="price"> Initialized Auction </span>
 
-          <span class="time-ago"><BlocksTimeAgo :blocks="currentBlock - auction.initEvent.block" /></span>
+          <span class="time-ago"
+            ><BlocksTimeAgo :blocks="currentBlock - auction.initEvent.block"
+          /></span>
 
           <span class="links">
-            <NuxtLink :to="`${config.public.blockExplorer}/tx/${auction.initEvent.tx}`" target="_blank">
+            <NuxtLink
+              :to="`${config.public.blockExplorer}/tx/${auction.initEvent.tx}`"
+              target="_blank"
+            >
               <Icon type="link" />
             </NuxtLink>
           </span>
         </AuctionBidTimelineItem>
       </template>
 
-      <div v-if="! backfillComplete" v-show="! loading" ref="loadMore" class="load-more">
-        <Button @click="backfill">{{ $t('load_more')}}</Button>
+      <div v-if="!backfillComplete" v-show="!loading" ref="loadMore" class="load-more">
+        <Button @click="backfill">{{ $t('load_more') }}</Button>
       </div>
 
-      <Loading v-if="loading || ! currentBlock" :txt="$t('auction.loading_bid_history')" />
+      <Loading v-if="loading || !currentBlock" :txt="$t('auction.loading_bid_history')" />
     </slot>
   </section>
 </template>
@@ -58,7 +64,9 @@ import { useElementVisibility } from '@vueuse/core'
 import { useBlockNumber } from '@wagmi/vue'
 
 const config = useRuntimeConfig()
-const { data: currentBlock } = useBlockNumber({ chainId: config.public.chainId })
+const { data: currentBlock } = useBlockNumber({
+  chainId: config.public.chainId,
+})
 
 const props = defineProps({
   auction: Object,
@@ -67,7 +75,9 @@ const props = defineProps({
 const state = useOnchainStore()
 
 const bids = computed(() => props.auction.bids)
-const backfillComplete = computed(() => props.auction.bidsBackfilledUntilBlock <= props.auction.createdBlockEstimate)
+const backfillComplete = computed(
+  () => props.auction.bidsBackfilledUntilBlock <= props.auction.createdBlockEstimate
+)
 
 const loading = ref(true)
 const loadMore = ref()
@@ -80,7 +90,7 @@ const backfill = async () => {
 
     // If we're not fully backfilled and we have less than 20 bids loaded,
     // continue backfilling events.
-    while (! backfillComplete.value && bids.value?.length < 20) {
+    while (!backfillComplete.value && bids.value?.length < 20) {
       await delay(250)
       await state.backfillAuctionBids(props.auction.id)
     }
@@ -105,7 +115,7 @@ onMounted(async () => {
 
 watch(loadMoreVisible, () => {
   // Skip if we have enough bids for the viewport or we're already loading
-  if (! loadMoreVisible.value || loading.value) return
+  if (!loadMoreVisible.value || loading.value) return
 
   backfill()
 })

@@ -1,12 +1,7 @@
 <template>
   <slot :start="start" name="start"></slot>
 
-  <Modal
-    :open="open"
-    @close="cancel"
-    :x-close="false"
-    class="transaction-flow"
-  >
+  <Modal :open="open" @close="cancel" :x-close="false" class="transaction-flow">
     <slot name="before" />
 
     <div class="text">
@@ -47,11 +42,11 @@ const props = defineProps({
         confirm: '[[Really?]]',
       },
       lead: {
-        confirm: '[[Do you really?]]'
+        confirm: '[[Do you really?]]',
       },
       action: {
         confirm: '[[Do!]]',
-      }
+      },
     },
   },
   request: Function,
@@ -74,7 +69,7 @@ const open = ref(false)
 const switchChain = ref(false)
 watchChainId($wagmi, {
   async onChange() {
-    if (! switchChain.value) return
+    if (!switchChain.value) return
 
     if (await checkChain()) {
       switchChain.value = false
@@ -82,11 +77,13 @@ watchChainId($wagmi, {
     } else {
       switchChain.value = true
     }
-  }
+  },
 })
 
 const cachedRequest = ref(props.request)
-watch(props, () => { cachedRequest.value = props.request })
+watch(props, () => {
+  cachedRequest.value = props.request
+})
 
 const requesting = ref(false)
 const waiting = ref(false)
@@ -134,7 +131,7 @@ const initializeRequest = async (request = cachedRequest.value) => {
   tx.value = null
   receipt.value = null
 
-  if (! await checkChain()) {
+  if (!(await checkChain())) {
     switchChain.value = true
     return
   } else {

@@ -19,10 +19,13 @@ const ARWEAVE_GATEWAY = 'https://arweave.net/'
 /**
  * Resolves various URI schemes to HTTP URLs
  */
-export const resolveURI = async (uri: string, config = { ipfs: IPFS_GATEWAY, ar: ARWEAVE_GATEWAY }): Promise<string> => {
+export const resolveURI = async (
+  uri: string,
+  config = { ipfs: IPFS_GATEWAY, ar: ARWEAVE_GATEWAY }
+): Promise<string> => {
   const { ipfs, ar } = config
 
-  if (! uri) return ''
+  if (!uri) return ''
 
   // Handle base64 encoded data URIs
   if (uri.startsWith('data:')) {

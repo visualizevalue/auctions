@@ -17,4 +17,3 @@ main {
   gap: var(--spacer);
 }
 </style>
-

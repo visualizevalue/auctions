@@ -1,4 +1,4 @@
-import { useAccount, useSwitchChain } from "@wagmi/vue"
+import { useAccount, useSwitchChain } from '@wagmi/vue'
 
 export const useMainChainId = () => {
   const config = useRuntimeConfig()

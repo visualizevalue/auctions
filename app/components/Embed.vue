@@ -1,19 +1,10 @@
 <template>
-  <div
-    class="embed"
-    @touchmove.stop.prevent="() => null"
-  >
-    <video v-if="isPlayable" autoplay muted playsinline loop crossorigin="anonymous" >
-      <source :src="src" :type="mediaType">
+  <div class="embed" @touchmove.stop.prevent="() => null">
+    <video v-if="isPlayable" autoplay muted playsinline loop crossorigin="anonymous">
+      <source :src="src" :type="mediaType" />
       Your browser does not support the video tag.
     </video>
-    <iframe
-      v-else
-      ref="frame"
-      frameborder="0"
-      :src="src"
-      sandbox="allow-scripts"
-    ></iframe>
+    <iframe v-else ref="frame" frameborder="0" :src="src" sandbox="allow-scripts"></iframe>
   </div>
 </template>
 
@@ -50,8 +41,8 @@ const props = defineProps({
 const src = ref(props.src)
 const mediaType = ref()
 const isPlayable = computed(() => {
-  if (! mediaType.value) return false
-  return document.createElement('video').canPlayType(mediaType.value) !== ""
+  if (!mediaType.value) return false
+  return document.createElement('video').canPlayType(mediaType.value) !== ''
 })
 
 watchEffect(async () => {
@@ -87,4 +78,3 @@ watch(width, () => {
   }
 }
 </style>
-

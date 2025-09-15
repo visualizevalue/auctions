@@ -3,10 +3,10 @@
     <slot name="before" />
 
     <img :src="artist.avatar || avatar" :alt="name" />
-    <h1 @click="() => ! hideAddress && copy(address)">
+    <h1 @click="() => !hideAddress && copy(address)">
       <span>{{ name }}</span>
       <small v-if="copied">{{ $t('profile.address_copied') }}</small>
-      <small v-else-if="! hideAddress">{{ shortAddress(address) }}</small>
+      <small v-else-if="!hideAddress">{{ shortAddress(address) }}</small>
     </h1>
     <p v-if="description">{{ description }}</p>
 
@@ -43,10 +43,8 @@ const artistAddress = computed(() => props.address)
 const { copy, copied } = useClipboard({ source: artistAddress })
 const description = computed(() => props.description || artist.value.description)
 
-const hasTags = computed(() => artist.value.url ||
-  artist.value.email ||
-  artist.value.twitter ||
-  artist.value.github
+const hasTags = computed(
+  () => artist.value.url || artist.value.email || artist.value.twitter || artist.value.github
 )
 </script>
 

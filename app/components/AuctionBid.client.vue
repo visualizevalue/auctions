@@ -16,7 +16,7 @@
           chain: 'Switch Chain',
           requesting: 'Confirm In Wallet',
           waiting: 'Transaction Submitted',
-          complete: 'Success!'
+          complete: 'Success!',
         },
         lead: {
           chain: 'Requesting to switch chain...',
@@ -53,8 +53,12 @@ const priceFeed = usePriceFeedStore()
 
 const displayPrice = computed(() => formatEther(props.value))
 
-const { data: currentBlock } = useBlockNumber({ chainId: config.public.chainId })
-const blocksRemaining = computed(() => props.auction.untilBlockEstimate - Number(currentBlock.value || 0n))
+const { data: currentBlock } = useBlockNumber({
+  chainId: config.public.chainId,
+})
+const blocksRemaining = computed(
+  () => props.auction.untilBlockEstimate - Number(currentBlock.value || 0n)
+)
 const now = useNow()
 const until = computed(() => props.auction.endTimestamp)
 const secondsRemaining = computed(() => until.value - now.value)
@@ -67,9 +71,7 @@ const bidRequest = computed(() => async () => {
     chainId: config.public.chainId,
     address: config.public.auctionsAddress,
     functionName: 'bid',
-    args: [
-      props.auction.id,
-    ],
+    args: [props.auction.id],
     value: props.value,
     gas: 80_000n,
   })

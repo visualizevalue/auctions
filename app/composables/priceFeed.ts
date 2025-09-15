@@ -9,11 +9,11 @@ const CHAINLINK_PRICE_FEED_ABI = [
       { internalType: 'int256', name: 'answer', type: 'int256' },
       { internalType: 'uint256', name: 'startedAt', type: 'uint256' },
       { internalType: 'uint256', name: 'updatedAt', type: 'uint256' },
-      { internalType: 'uint80', name: 'answeredInRound', type: 'uint80' }
+      { internalType: 'uint80', name: 'answeredInRound', type: 'uint80' },
     ],
     stateMutability: 'view',
-    type: 'function'
-  }
+    type: 'function',
+  },
 ] as const
 
 const PRICE_FEED_ADDRESS = '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419'
@@ -22,22 +22,21 @@ export const usePriceFeedStore = () => {
   const { $wagmi } = useNuxtApp()
 
   return defineStore('priceFeedStore', {
-
     state: () => ({
       version: 1,
       lastUpdated: 0,
-      ethUSDRaw: null as bigint|null,
+      ethUSDRaw: null as bigint | null,
     }),
     getters: {
-      ethUSD: store => store.ethUSDRaw ? (store.ethUSDRaw / BigInt(1e8)) : 0n,
-      ethUSC: store => store.ethUSDRaw ? (store.ethUSDRaw / BigInt(1e6)) : 0n,
-      ethUSDFormatted () {
+      ethUSD: (store) => (store.ethUSDRaw ? store.ethUSDRaw / BigInt(1e8) : 0n),
+      ethUSC: (store) => (store.ethUSDRaw ? store.ethUSDRaw / BigInt(1e6) : 0n),
+      ethUSDFormatted() {
         return formatNumber(Number(this.ethUSC) / 100, 2)
       },
-      weiToUSD (store) {
+      weiToUSD(store) {
         return (wei: bigint = 0n) => {
-          if (! wei) return formatNumber(0, 2)
-          const cents = (wei * (store.ethUSDRaw || 0n)) / (10n ** 18n) / (10n ** 6n)
+          if (!wei) return formatNumber(0, 2)
+          const cents = (wei * (store.ethUSDRaw || 0n)) / 10n ** 18n / 10n ** 6n
 
           return formatNumber(Number(cents) / 100, 2)
         }
@@ -45,7 +44,7 @@ export const usePriceFeedStore = () => {
     },
 
     actions: {
-      async fetchEthUsdPrice () {
+      async fetchEthUsdPrice() {
         if (nowInSeconds() - this.lastUpdated < 3_600) {
           return this.ethUSD
         }
@@ -65,7 +64,7 @@ export const usePriceFeedStore = () => {
         }
 
         return this.ethUSD
-      }
+      },
     },
 
     persist: {
@@ -75,6 +74,5 @@ export const usePriceFeedStore = () => {
         deserialize: parseJSON,
       },
     },
-
   })()
 }

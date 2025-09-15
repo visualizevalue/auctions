@@ -1,13 +1,14 @@
-export const ipfsToHttpURI = (url: string, gateway: string = 'https://ipfs.io/ipfs/') => url.replace('ipfs://', gateway)
+export const ipfsToHttpURI = (url: string, gateway: string = 'https://ipfs.io/ipfs/') =>
+  url.replace('ipfs://', gateway)
 
 export const validateURI = (url: string) => {
-  if (! url || ! url.length) return false
+  if (!url || !url.length) return false
 
   let validated = url.trim()
 
   // Normalize protocol
-  if (! validated.startsWith('https://')) validated = `https://${validated}`
-  if (! validated.startsWith('http')) validated = `http://${validated}`
+  if (!validated.startsWith('https://')) validated = `https://${validated}`
+  if (!validated.startsWith('http')) validated = `http://${validated}`
 
   // Check url validity
   try {

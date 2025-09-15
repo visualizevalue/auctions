@@ -7,12 +7,15 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
 
-withDefaults(defineProps<{
-  to: RouteLocationRaw
-  title?: string
-}>(), {
-  title: 'View',
-})
+withDefaults(
+  defineProps<{
+    to: RouteLocationRaw
+    title?: string
+  }>(),
+  {
+    title: 'View',
+  }
+)
 </script>
 
 <style scoped>

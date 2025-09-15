@@ -1,6 +1,8 @@
 import { useAccount } from '@wagmi/vue'
 
-export const useIsMeCheck = (checkAddress: Ref|ComputedRef<`0x${string}`>|`0x${string}`|null) => {
+export const useIsMeCheck = (
+  checkAddress: Ref | ComputedRef<`0x${string}`> | `0x${string}` | null
+) => {
   const { address } = useAccount()
   const toCheck = toValue(checkAddress)
 
@@ -18,4 +20,3 @@ export const useIsMe = () => {
 
   return useIsMeCheck(id.value)
 }
-

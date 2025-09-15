@@ -1,6 +1,6 @@
 <template>
-  <div v-if="! auction.settled && (! isConnected || isBidderOrBeneficiary)">
-    <Connect v-if="! isConnected" class="block">Connect To Settle</Connect>
+  <div v-if="!auction.settled && (!isConnected || isBidderOrBeneficiary)">
+    <Connect v-if="!isConnected" class="block">Connect To Settle</Connect>
     <TransactionFlow
       v-else
       :request="settleRequest"
@@ -9,7 +9,7 @@
           chain: 'Switch Chain',
           requesting: 'Confirm In Wallet',
           waiting: 'Transaction Submitted',
-          complete: 'Success!'
+          complete: 'Success!',
         },
         lead: {
           chain: 'Requesting to switch chain...',
@@ -28,9 +28,7 @@
       auto-close-success
     >
       <template #start="{ start }">
-        <Button @click="start" class="bid">
-          Settle Auction
-        </Button>
+        <Button @click="start" class="bid"> Settle Auction </Button>
       </template>
     </TransactionFlow>
   </div>
@@ -66,9 +64,7 @@ const settleRequest = computed(() => async () => {
     chainId: config.public.chainId,
     address: config.public.auctionsAddress,
     functionName: 'settle',
-    args: [
-      props.auction.id,
-    ],
+    args: [props.auction.id],
     value: props.value,
     gas: 95_000n,
   })
