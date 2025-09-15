@@ -1,5 +1,4 @@
-import { getBalance, getPublicClient, readContract } from '@wagmi/core'
-import { type GetBalanceReturnType } from '@wagmi/core'
+import { getPublicClient, readContract } from '@wagmi/core'
 import { parseAbiItem, type PublicClient } from 'viem'
 
 export const CURRENT_STATE_VERSION = 4
