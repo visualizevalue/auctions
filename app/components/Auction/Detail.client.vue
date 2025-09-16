@@ -32,9 +32,7 @@
     >
       <section class="details">
         <header class="title">
-          <h1>
-            {{ token.name }} <small>#{{ token.tokenId }}</small>
-          </h1>
+          <AuctionTokenTitle :token="token" />
           <p v-if="token.description">
             <ExpandableText
               :text="token.description"
@@ -94,8 +92,6 @@
 </template>
 
 <script setup lang="ts">
-import { formatEther } from 'viem'
-
 const { auction } = defineProps<{
   auction: Auction
 }>()
@@ -216,7 +212,7 @@ const value = ref('0.00001')
     background: var(--card-background);
     backdrop-filter: var(--blur);
 
-    h1 {
+    :deep(> h1) {
       font-size: var(--font-lg);
 
       small {
