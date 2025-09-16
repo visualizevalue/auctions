@@ -242,7 +242,7 @@ export const useOnchainStore = () => {
         const maxRangeBlock = toBlock - MAX_BLOCK_RANGE
         const fromBlock =
           auction.bidsFetchedUntilBlock > maxRangeBlock // If we've already fetched
-            ? auction.bidsFetchedUntilBlock + 1 // we want to continue where we left off
+            ? auction.bidsFetchedUntilBlock + 1n // we want to continue where we left off
             : maxRangeBlock > createdBlockEstimate // Otherwise we'll go back as far as possible
               ? maxRangeBlock // (to our max range)
               : createdBlockEstimate // (or all the way to when the auction was created)
