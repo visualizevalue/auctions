@@ -104,7 +104,7 @@ const store = useOnchainStore()
 const token = computed(() => auction.token)
 const collection = computed(() => auction.collection)
 
-const value = ref('0.1')
+const value = ref('0.00001')
 </script>
 
 <style scoped>

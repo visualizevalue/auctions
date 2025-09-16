@@ -41,7 +41,7 @@ const props = defineProps({
 const minimum = computed(() => props.auction.currentBidPrice || parseEther('0.001'))
 const minimumEth = computed(() => formatEther(minimum.value))
 
-const value = defineModel('value', { default: '0.1' })
+const value = defineModel('value', { default: '0.00001' })
 const onBid = () => {
   props.bidComplete()
 }
