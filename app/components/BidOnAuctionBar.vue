@@ -47,8 +47,10 @@ const onBid = () => {
 }
 
 watchEffect(() => {
-  if (value.value < minimumEth.value) {
-    value.value = minimumEth.value
+  if (parseFloat(value.value) < parseFloat(minimumEth.value)) {
+    nextTick(() => {
+      value.value = minimumEth.value
+    })
   }
 })
 </script>
