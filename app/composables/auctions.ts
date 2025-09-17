@@ -263,6 +263,35 @@ export const useOnchainStore = () => {
         if (newBids.length) {
           await Promise.all([this.getAuction(id), this.fetchMinimumBid(id)])
         }
+
+        // Check bid consistency after fully syncing to current block
+        if (auction.bidsFetchedUntilBlock >= currentBlock && auction.bids.length) {
+          const lastFetchedBid = auction.bids[0]?.value || 0n // Most recent bid is first after reverse()
+          console.debug(
+            `Checking bid mismatch - latest bid is ${auction.latestBid} & last synced tx is ${lastFetchedBid}`
+          )
+
+          // If there's a mismatch between latestBid and the last fetched bid
+          if (auction.latestBid !== lastFetchedBid) {
+            console.warn(
+              `Bid mismatch detected for auction #${id}. Clearing and re-syncing...`
+            )
+            console.warn(`Expected: ${auction.latestBid}, Got: ${lastFetchedBid}`)
+
+            // Clear existing bid data
+            auction.bids = []
+            auction.bidsFetchedUntilBlock = 0n
+            auction.bidsBackfilledUntilBlock = 0n
+
+            // Re-fetch all bids
+            await this.fetchAuctionBids(id)
+
+            // Backfill remaining bids if needed
+            while (auction.bidsBackfilledUntilBlock > createdBlockEstimate) {
+              await this.backfillAuctionBids(id)
+            }
+          }
+        }
       },
 
       async backfillAuctionBids(id: bigint) {
