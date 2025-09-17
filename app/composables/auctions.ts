@@ -1,7 +1,7 @@
 import { getPublicClient, readContract } from '@wagmi/core'
 import { parseAbiItem, type PublicClient } from 'viem'
 
-export const CURRENT_STATE_VERSION = 5
+export const CURRENT_STATE_VERSION = 6
 export const MAX_BLOCK_RANGE = 5000n
 export const MINT_BLOCKS = BLOCKS_PER_DAY
 
