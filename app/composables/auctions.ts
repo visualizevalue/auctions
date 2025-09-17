@@ -115,9 +115,9 @@ export const useOnchainStore = () => {
             tx: settledLog.transactionHash,
             from: tx.from,
           }
-        } else {
-          this.fetchMinimumBid(id)
         }
+
+        await this.fetchMinimumBid(id)
 
         return auction
       },
@@ -205,6 +205,8 @@ export const useOnchainStore = () => {
         }
 
         this.auctions[id] = auction
+
+        await this.fetchMinimumBid(id)
 
         return auction
       },
