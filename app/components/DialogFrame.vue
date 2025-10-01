@@ -8,6 +8,7 @@
 
 <script setup>
 defineProps({ class: 'String' })
+const emit = defineEmits(['close'])
 
 const dialog = ref()
 
@@ -31,6 +32,19 @@ const close = () => {
 const open = () => {
   dialog.value.showModal()
 }
+
+const handleCancel = (event) => {
+  event.preventDefault()
+  emit('close')
+}
+
+onMounted(() => {
+  dialog.value.addEventListener('cancel', handleCancel)
+})
+
+onBeforeUnmount(() => {
+  dialog.value?.removeEventListener('cancel', handleCancel)
+})
 
 defineExpose({
   close,

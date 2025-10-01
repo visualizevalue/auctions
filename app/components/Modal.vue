@@ -1,5 +1,5 @@
 <template>
-  <DialogFrame class="modal" :class="class" ref="dialog">
+  <DialogFrame class="modal" :class="class" ref="dialog" @close="$emit('close')">
     <button v-if="xClose" class="close" @click="$emit('close')">
       <Icon type="close" />
     </button>
