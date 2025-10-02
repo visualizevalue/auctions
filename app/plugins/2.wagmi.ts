@@ -52,7 +52,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   const transports = fallback(transportDefinitions)
 
   const wagmiConfig: Config = createConfig({
-    chains: [mainnet, sepolia, holesky, localhost],
+    chains: [mainnet, sepolia, holesky, localhost, hardhat],
     batch: {
       multicall: true,
     },
@@ -71,6 +71,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       [sepolia.id]: transports,
       [holesky.id]: transports,
       [localhost.id]: transports,
+      [hardhat.id]: transports,
     },
   })
 
