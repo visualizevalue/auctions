@@ -9,7 +9,7 @@ import {
   type Config,
   type CreateConnectorFn,
 } from '@wagmi/vue'
-import { mainnet, sepolia, holesky, localhost } from '@wagmi/vue/chains'
+import { mainnet, sepolia, holesky, localhost, hardhat } from '@wagmi/vue/chains'
 import { coinbaseWallet, injected, metaMask, walletConnect } from '@wagmi/vue/connectors'
 import type { CustomTransport, Transport } from 'viem'
 

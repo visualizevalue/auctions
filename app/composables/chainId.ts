@@ -3,7 +3,7 @@ import { useAccount, useSwitchChain } from '@wagmi/vue'
 export const useMainChainId = () => {
   const config = useRuntimeConfig()
 
-  return config.public.chainId as 1 | 11155111 | 17000 | 1337
+  return config.public.chainId as 1 | 11155111 | 17000 | 1337 | 31337
 }
 
 export const useEnsureChainIdCheck = () => {
