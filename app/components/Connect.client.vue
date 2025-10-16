@@ -8,6 +8,7 @@
 
   <Teleport to="body">
     <Modal v-if="showConnect" :open="chooseModalOpen" @close="closeModal">
+      <h1>Connect Wallet</h1>
       <div class="wallet-options">
         <Button
           v-for="connector in shownConnectors"
